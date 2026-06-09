@@ -1,0 +1,21 @@
+{
+  "short_name": "Jocs Unitats",
+  "name": "Jocs de Canvis d'Unitat",
+  "description": "Una col·lecció de mini-jocs divertits per practicar els canvis d'unitats.",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#6366f1",
+  "background_color": "#f1f5f9"
+}

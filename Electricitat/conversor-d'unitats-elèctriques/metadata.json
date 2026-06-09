@@ -1,0 +1,6 @@
+{
+  "name": "Conversor d'Unitats Elèctriques",
+  "description": "Una aplicació web en català per ajudar a entendre i practicar la conversió d'unitats de magnituds elèctriques com Volts, Amperes, Ohms i Watts. Inclou una secció de teoria i un mode de pràctica interactiu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

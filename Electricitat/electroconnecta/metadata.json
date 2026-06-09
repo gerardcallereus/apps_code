@@ -1,0 +1,6 @@
+{
+  "name": "ElectroConnecta",
+  "description": "Un joc educatiu interactiu sobre la conductivitat elèctrica per a alumnat de sisè de primària. Connecta els materials correctament per encendre la bombeta!",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
