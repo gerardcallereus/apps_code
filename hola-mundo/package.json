@@ -1,0 +1,14 @@
+{
+  "name": "hola-mundo-interactiva",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Una aplicación web de Hola Mundo interactiva con diseño premium",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

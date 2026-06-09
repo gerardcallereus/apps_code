@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Una aplicación web de Hola Mundo interactiva con diseño premium, efectos de partículas, síntesis de audio integrada y soporte para múltiples idiomas.">
+  <title>Hola Mundo Interactiva</title>
+  
+  <!-- Optimización de carga de fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <link rel="stylesheet" href="index.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+
+  <!-- Capa de Fondos Animados -->
+  <div class="background-wrapper" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- Lienzo de Partículas Interactivas -->
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+  <!-- Contenedor Principal (Glassmorphism) -->
+  <main class="container">
+    <div class="glow-ring" aria-hidden="true"></div>
+
+    <header>
+      <div class="logo-badge">
+        <span class="logo-icon"></span>
+        <span>Aesthetic Engine v1.0</span>
+      </div>
+    </header>
+
+    <!-- Sección del Saludo Central -->
+    <section class="greeting-viewport" aria-live="polite">
+      <h1 id="greeting-text" class="greeting-text">¡Hola Mundo!</h1>
+    </section>
+
+    <!-- Panel de Selección de Idioma -->
+    <section class="languages-container">
+      <h2 class="panel-title">Elige un idioma</h2>
+      <div id="languages-grid" class="languages-grid">
+        <!-- Generado dinámicamente por JS -->
+      </div>
+    </section>
+
+    <!-- Barra de Estado / Footer -->
+    <footer>
+      <div class="interactive-counter">
+        <span class="pulse-indicator"></span>
+        <span>Interacciones: <strong id="click-counter">0</strong></span>
+      </div>
+      
+      <div class="controls-row">
+        <!-- Botón para alternar brillo de neón -->
+        <button id="toggle-glow" class="icon-btn" aria-label="Alternar brillo de neón" title="Alternar brillo de neón">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+            <circle cx="12" cy="12" r="4"></circle>
+          </svg>
+        </button>
+      </div>
+    </footer>
+  </main>
+
+</body>
+</html>

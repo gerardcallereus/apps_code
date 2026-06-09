@@ -1,0 +1,5 @@
+{
+  "name": "Conway's Logic Game",
+  "description": "A didactic game to learn algorithms and logic using Conway's Game of Life rules.",
+  "requestFramePermissions": []
+}
