@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Catalunya: Repte Energètic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontSize: {
+              'xs': ['13px', { lineHeight: '1.2rem' }],
+              'sm': ['15px', { lineHeight: '1.4rem' }],
+              'base': ['17px', { lineHeight: '1.6rem' }],
+            },
+            colors: {
+              'theme-easy-bg': '#f0fdf4',
+              'theme-easy-text': '#14532d',
+              'theme-easy-border': '#22c55e',
+              'theme-medium-bg': '#f8fafc',
+              'theme-medium-text': '#1e293b',
+              'theme-medium-border': '#475569',
+              'theme-hard-bg': '#fef2f2',
+              'theme-hard-text': '#7f1d1d',
+              'theme-hard-border': '#ef4444',
+            }
+          }
+        }
+      }
+    </script>
+  <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.1.2",
+    "jspdf": "https://aistudiocdn.com/jspdf@^2.5.1",
+    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="text-slate-800 m-0 bg-slate-50">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

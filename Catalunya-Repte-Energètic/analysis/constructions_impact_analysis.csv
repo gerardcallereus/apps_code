@@ -1,0 +1,25 @@
+Energy_Source,Project_Name,Cost_M_Euro,Capacity_MW,Build_Time_Quarters,Upkeep_M_Euro_per_Quarter,CO2_Tons_per_MW_per_Quarter,Construction_Energy_Demand_Total_MW,Approval_Citizen,Approval_Business,Approval_Political,Approval_Environmentalist
+Solar,"Petit Parc Solar",400,200,2,4,0,20,2,0,0,3
+Solar,"Parc Solar Estàndard",750,400,3,8,0,40,2,0,0,3
+Solar,"Gran Parc Solar",1300,750,4,15,0,75,1,-1,0,2
+Eòlica,"Petit Parc Eòlic",600,250,3,9,0,30,1,0,0,2
+Eòlica,"Parc Eòlic Estàndard",1100,500,4,18,0,60,0,-1,0,2
+Eòlica,"Gran Parc Eòlic",2000,900,5,32,0,100,-2,-2,0,1
+Hidràulica,"Central de Bombament",1500,400,5,12,0,150,0,2,2,-2
+Hidràulica,"Ampliació de Presa",2500,700,6,20,0,250,0,3,3,-4
+Hidràulica,"Nova Presa al Pirineu",4000,1100,8,30,0,400,-2,4,4,-8
+Nuclear,"Mini-reactor Nuclear (SMR)",3500,300,6,40,0,200,-5,5,2,-10
+Nuclear,"Central Nuclear Mitjana",6000,1100,8,120,0,500,-8,8,3,-15
+Nuclear,"Gran Central Nuclear",9000,1600,10,180,0,800,-12,10,4,-20
+Combustibles Fòssils,"Cicle Combinat (Gas) Petit",500,400,2,15,0.4,50,0,4,0,-8
+Combustibles Fòssils,"Cicle Combinat (Gas) Estàndard",800,800,3,30,0.4,90,-2,5,0,-10
+Combustibles Fòssils,"Gran Central de Cicle Combinat",1200,1200,4,45,0.4,130,-4,6,-2,-12
+Biocombustible,"Planta de Biogàs Comarcal",300,50,3,8,0.1,10,-1,1,0,1
+Biocombustible,"Planta de Biomassa Estàndard",550,100,4,15,0.1,25,-2,2,0,0
+Biocombustible,"Gran Centre de Valorització",900,180,5,25,0.1,40,-4,3,0,-2
+Eòlica Marina,"Parc Eòlic Marí Experimental",2500,400,6,40,0,200,0,3,2,1
+Eòlica Marina,"Parc Eòlic Marí Estàndard",4500,800,8,75,0,350,-2,4,3,0
+Eòlica Marina,"Macroparc Eòlic Marí",7000,1300,10,120,0,500,-4,5,4,-2
+Termosolar,"Planta Termosolar Petita",1800,150,5,25,0,100,0,1,1,4
+Termosolar,"Planta Termosolar Estàndard",3000,300,7,45,0,180,-1,2,0,3
+Termosolar,"Gran Complex Termosolar",5000,500,9,70,0,300,-3,3,0,2
