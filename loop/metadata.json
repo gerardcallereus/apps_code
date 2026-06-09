@@ -1,0 +1,6 @@
+{
+  "name": "LOOP",
+  "description": "La llibreria en català per a la generació de música algorísmica en temps real. El motor del temps cíclic sobre LOOP.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

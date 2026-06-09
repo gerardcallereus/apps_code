@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Custom Scrollbars for DAW aesthetic */
+:root {
+  color-scheme: dark;
+  --scrollbar-thumb: #27272a;
+  --scrollbar-track: #09090b;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+}
+
+/* Textures & Highlights */
+.studio-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.015;
+  pointer-events: none;
+}
+
+/* CodeMirror & LOOP Editor Dark Theme Customization */
+strudel-editor,
+.cm-editor {
+  background-color: #09090b !important; /* Zinc-950 background */
+  color: #f4f4f5 !important; /* Pure light silver text */
+  font-family: "JetBrains Mono", var(--font-mono), monospace !important;
+  font-size: 14.5px !important;
+  line-height: 1.65 !important;
+}
+
+.cm-scroller {
+  background-color: #09090b !important;
+  font-family: "JetBrains Mono", var(--font-mono), monospace !important;
+}
+
+.cm-content {
+  caret-color: #a3e635 !important; /* Neon green cursor */
+}
+
+/* Gutters (line numbers) */
+.cm-gutters {
+  background-color: #121216 !important; /* Darker grey */
+  color: #52525b !important; /* Muted zinc-600 */
+  border-right: 2px solid #27272a !important; /* Zinc-800 line divider */
+}
+
+/* Active line highlights */
+.cm-activeLine {
+  background-color: #18181b !important; /* Zinc-900 active line */
+}
+
+.cm-activeLineGutter {
+  background-color: #27272a !important;
+  color: #a3e635 !important; /* Neon green active line number */
+  font-weight: 800 !important;
+}
+
+/* Selection styles */
+.cm-selectionBackground,
+.cm-selectionLayer .cm-selectionBackground,
+::selection {
+  background-color: rgba(163, 230, 53, 0.25) !important; /* Neon green selection highlight */
+  color: #ffffff !important;
+}
+
+/* Neon code syntax tokens */
+.cm-keyword {
+  color: #f43f5e !important; /* Hot neon pink */
+  font-weight: 800 !important;
+}
+
+.cm-string {
+  color: #a3e635 !important; /* Electric lime-green */
+  font-weight: 700 !important;
+}
+
+.cm-number {
+  color: #fbbf24 !important; /* Vibrant golden amber */
+  font-weight: 800 !important;
+}
+
+.cm-comment {
+  color: #71717a !important; /* Muted zinc-500 comments */
+  font-weight: 600 !important;
+  font-style: italic !important;
+}
+
+.cm-variableName, .cm-variable {
+  color: #38bdf8 !important; /* Electric sky-blue */
+  font-weight: 600 !important;
+}
+
+.cm-matchingBracket {
+  background-color: #ec4899 !important; /* Glowing magenta matching brackets */
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+/* Ensure parenthesis () brackets [] and braces {} are bright and clear */
+.cm-line {
+  color: #f4f4f5 !important;
+  font-weight: 600 !important;
+}
+
+.tok-punctuation, .tok-operator, .tok-bracket, .cm-punctuation {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+strudel-editor input[type="range"],
+.cm-widget input[type="range"],
+.cm-slider,
+.cm-widget,
+.cm-widget canvas {
+  pointer-events: auto !important;
+  z-index: 50 !important;
+  position: relative !important;
+}
+
+/* Active playing word highlight (glowing neon green enquadrat) */
+.cm-editor span[style*="outline"] {
+  outline: 2.5px solid #a3e635 !important; /* Electric lime green */
+  outline-offset: 1px !important;
+  background-color: rgba(163, 230, 53, 0.2) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 12px rgba(163, 230, 53, 0.7) !important;
+  transition: all 0.05s ease-in-out !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 4px rgba(163, 230, 53, 0.4) !important;
+}
+
+/* LED equalizer animation */
+@keyframes pulseLed {
+  0%, 100% { height: 15%; }
+  50% { height: 85%; }
+}
+
+.led-bar {
+  animation: pulseLed 1.2s ease-in-out infinite;
+}
+.led-bar:nth-child(2) { animation-delay: 0.15s; animation-duration: 0.8s; }
+.led-bar:nth-child(3) { animation-delay: 0.3s; animation-duration: 1.4s; }
+.led-bar:nth-child(4) { animation-delay: 0.45s; animation-duration: 0.9s; }
+.led-bar:nth-child(5) { animation-delay: 0.6s; animation-duration: 1.1s; }
+.led-bar:nth-child(6) { animation-delay: 0.2s; animation-duration: 1.3s; }
+.led-bar:nth-child(7) { animation-delay: 0.4s; animation-duration: 0.7s; }
+.led-bar:nth-child(8) { animation-delay: 0.5s; animation-duration: 1.5s; }
