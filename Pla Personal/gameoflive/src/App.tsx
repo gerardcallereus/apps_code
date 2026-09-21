@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Check, Info, ArrowRight, RotateCcw, HelpCircle, Trophy, X, BarChart2, Brain, Activity, List } from 'lucide-react';
+import { Play, Check, Info, ArrowRight, RotateCcw, HelpCircle, Trophy, X, BarChart2, Brain, Activity, List, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { saveGame, loadGame, clearGame, LevelStat } from './storage';
+import { ScoreSummary } from './components/ScoreSummary';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -313,57 +315,54 @@ export default function App() {
   const [showRules, setShowRules] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [showError, setShowError] = useState(false);
-  const [saveCodeInput, setSaveCodeInput] = useState('');
-  const [saveCodeError, setSaveCodeError] = useState(false);
   const [totalChecks, setTotalChecks] = useState(0);
   const [totalErrors, setTotalErrors] = useState(0);
-  const [levelStats, setLevelStats] = useState<Record<number, { checks: number, errors: number }>>({});
+  const [levelStats, setLevelStats] = useState<Record<number, LevelStat>>({});
+  const [hasSavedProgress, setHasSavedProgress] = useState(false);
+  const [savedLevelNum, setSavedLevelNum] = useState(1);
 
   const level = LEVELS[currentLevelIndex];
   const expectedGrid = getNextGeneration(level.initialState);
 
-  const generateSaveCode = (levelIdx: number, checks: number, errors: number, stats: any) => {
-    try {
-      const data = JSON.stringify({ l: levelIdx, c: checks, e: errors, s: stats });
-      return btoa(data).replace(/=/g, '');
-    } catch (e) {
-      return '';
-    }
-  };
+  // Carregar partida de localStorage en iniciar
+  useEffect(() => {
+    const saved = loadGame();
+    if (saved) {
+      const savedLevel = Math.min(Math.max(0, saved.currentLevelIndex), LEVELS.length - 1);
+      const checks = saved.totalChecks || 0;
+      const errors = saved.totalErrors || 0;
+      const stats = saved.levelStats || {};
+      
+      setCurrentLevelIndex(savedLevel);
+      setTotalChecks(checks);
+      setTotalErrors(errors);
+      setLevelStats(stats);
+      setHasSavedProgress(true);
+      setSavedLevelNum(savedLevel + 1);
 
-  const decodeSaveCode = (code: string) => {
-    try {
-      const padded = code + '==='.slice((code.length + 3) % 4);
-      return JSON.parse(atob(padded));
-    } catch (e) {
-      return null;
-    }
-  };
-
-  const handleRestore = () => {
-    const data = decodeSaveCode(saveCodeInput);
-    if (data && typeof data.l === 'number') {
-      setTotalChecks(data.c || 0);
-      setTotalErrors(data.e || 0);
-      setLevelStats(data.s || {});
-      if (data.l >= LEVELS.length) {
-        setCurrentLevelIndex(LEVELS.length - 1);
+      if (saved.gameState === 'completed') {
         setGameState('completed');
-      } else {
-        setCurrentLevelIndex(data.l);
-        setGameState('playing');
       }
-    } else {
-      setSaveCodeError(true);
-      setTimeout(() => setSaveCodeError(false), 3000);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Initialize player grid with empty cells
     setPlayerGrid(Array(level.size).fill(0).map(() => Array(level.size).fill(0)));
     setGameState(prev => (prev === 'intro' || prev === 'video') ? prev : 'playing');
   }, [currentLevelIndex, level.size]);
+
+  const handleResetAll = () => {
+    clearGame();
+    setCurrentLevelIndex(0);
+    setTotalChecks(0);
+    setTotalErrors(0);
+    setLevelStats({});
+    setHasSavedProgress(false);
+    setSavedLevelNum(1);
+    setGameState('intro');
+    setShowSummary(false);
+  };
 
   const toggleCell = (r: number, c: number) => {
     if (gameState !== 'playing') return;
@@ -375,18 +374,26 @@ export default function App() {
 
   const checkAnswer = () => {
     const isCorrect = JSON.stringify(playerGrid) === JSON.stringify(expectedGrid);
-    setTotalChecks(prev => prev + 1);
+    const newTotalChecks = totalChecks + 1;
+    const newTotalErrors = totalErrors + (isCorrect ? 0 : 1);
+    setTotalChecks(newTotalChecks);
+    setTotalErrors(newTotalErrors);
     
-    setLevelStats(prev => {
-      const currentStats = prev[level.id] || { checks: 0, errors: 0 };
-      return {
-        ...prev,
-        [level.id]: {
-          checks: currentStats.checks + 1,
-          errors: currentStats.errors + (isCorrect ? 0 : 1)
-        }
-      };
-    });
+    const cur = levelStats[level.id] || { checks: 0, errors: 0, solved: false };
+    const updatedStats: Record<number, LevelStat> = {
+      ...levelStats,
+      [level.id]: {
+        checks: cur.checks + 1,
+        errors: cur.errors + (isCorrect ? 0 : 1),
+        solved: cur.solved || isCorrect,
+      }
+    };
+    setLevelStats(updatedStats);
+
+    // Guardat automàtic immediat
+    saveGame(currentLevelIndex, newTotalChecks, newTotalErrors, updatedStats, 'playing');
+    setHasSavedProgress(true);
+    setSavedLevelNum(currentLevelIndex + 1);
 
     if (isCorrect) {
       setGameState('checked');
@@ -398,7 +405,6 @@ export default function App() {
         colors: ['#10b981', '#3b82f6', '#f59e0b']
       });
     } else {
-      setTotalErrors(prev => prev + 1);
       setShowError(true);
       setTimeout(() => setShowError(false), 3000);
     }
@@ -406,9 +412,13 @@ export default function App() {
 
   const nextLevel = () => {
     if (currentLevelIndex < LEVELS.length - 1) {
-      setCurrentLevelIndex(currentLevelIndex + 1);
+      const nextIdx = currentLevelIndex + 1;
+      setCurrentLevelIndex(nextIdx);
+      setSavedLevelNum(nextIdx + 1);
+      saveGame(nextIdx, totalChecks, totalErrors, levelStats, 'playing');
     } else {
       setGameState('completed');
+      saveGame(currentLevelIndex, totalChecks, totalErrors, levelStats, 'completed');
       confetti({
         particleCount: 300,
         spread: 100,
@@ -496,41 +506,53 @@ export default function App() {
             </div>
 
             <div className="mt-12 text-center">
-              <button 
-                onClick={() => setGameState('video')}
-                className="py-4 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2 mx-auto"
-              >
-                <Play className="w-5 h-5 fill-current" />
-                Començar l'Aventura
-              </button>
-
-              <div className="mt-10 mx-auto max-w-sm pt-8 border-t border-slate-200">
-                <p className="text-slate-600 font-medium mb-3 text-sm">Tens un codi d'una partida anterior?</p>
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={saveCodeInput}
-                    onChange={(e) => setSaveCodeInput(e.target.value.trim())}
-                    className="flex-1 px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700 font-mono text-sm"
-                    placeholder="Introdueix el codi..."
-                  />
-                  <button 
-                    onClick={handleRestore}
-                    className="px-4 py-2 border-2 border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
-                  >
-                    Restaurar
-                  </button>
-                </div>
-                <AnimatePresence>
-                  {saveCodeError && (
-                    <motion.p 
-                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="text-red-500 text-sm mt-2 font-medium"
+              {hasSavedProgress && (Object.values(levelStats).length > 0 || currentLevelIndex > 0) ? (
+                <div className="max-w-md mx-auto bg-blue-50/80 border border-blue-200 rounded-2xl p-6 text-center shadow-sm">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold mb-3">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" /> Partida desada trobada
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800">Vols continuar des d'on ho vas deixar?</h3>
+                  <p className="text-sm text-slate-600 mt-1 mb-5">
+                    Nivell actual: <strong>Nivell {savedLevelNum}</strong> de {LEVELS.length} ({(Object.values(levelStats) as LevelStat[]).filter(s => s.solved).length} superats).
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button
+                      onClick={() => setGameState(gameState === 'completed' ? 'completed' : 'playing')}
+                      className="py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      El codi no és vàlid o està corrupte.
-                    </motion.p>
-                  )}
-                </AnimatePresence>
+                      <Play className="w-4 h-4 fill-current" />
+                      Continuar Nivell {savedLevelNum}
+                    </button>
+                    <button
+                      onClick={() => setShowSummary(true)}
+                      className="py-3 px-4 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <BarChart2 className="w-4 h-4 text-blue-600" />
+                      Veure Nota i Resum
+                    </button>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-blue-100">
+                    <button
+                      onClick={handleResetAll}
+                      className="text-xs text-slate-500 hover:text-red-600 font-medium transition-colors cursor-pointer"
+                    >
+                      Començar una nova partida des de zero
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setGameState('video')}
+                  className="py-4 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2 mx-auto cursor-pointer"
+                >
+                  <Play className="w-5 h-5 fill-current" />
+                  Començar l'Aventura
+                </button>
+              )}
+
+              <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>El teu progrés i intents es guarden automàticament al teu navegador.</span>
               </div>
             </div>
           </div>
@@ -580,38 +602,53 @@ export default function App() {
 
   if (gameState === 'completed') {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans">
-        <motion.div 
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center"
-        >
-          <Trophy className="w-20 h-20 text-yellow-400 mx-auto mb-6" />
-          <h1 className="text-3xl font-bold text-slate-800 mb-4">Enhorabona!</h1>
-          <p className="text-slate-600 mb-8">Has completat tots els nivells i has après les regles del Joc de la Vida de Conway. Ara ets un mestre de l'algorismia cel·lular!</p>
-          
-          <div className="mb-8 p-4 bg-slate-100 rounded-xl border border-slate-200 text-left">
-            <p className="text-sm font-bold text-slate-700 mb-2">Codi del teu progrés final:</p>
-            <code className="block p-3 bg-white rounded border border-slate-300 text-blue-700 text-xs font-mono break-all select-all">
-              {generateSaveCode(LEVELS.length, totalChecks, totalErrors, levelStats)}
-            </code>
-            <p className="text-xs text-slate-500 mt-2 text-center">Tingues aquest codi a mà, el teu professor/a el pot necessitar per veure els teus resultats.</p>
-          </div>
-
-          <button 
-            onClick={() => {
-              setCurrentLevelIndex(0);
-              setGameState('intro');
-              setTotalChecks(0);
-              setTotalErrors(0);
-              setLevelStats({});
-            }}
-            className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+      <div className="min-h-screen bg-slate-50 py-10 px-4 font-sans text-slate-800">
+        <div className="max-w-4xl mx-auto">
+          {/* Capçalera d'enhorabona */}
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white p-8 rounded-3xl shadow-xl border border-slate-200 mb-8 text-center"
           >
-            <RotateCcw className="w-5 h-5" />
-            Tornar a jugar
-          </button>
-        </motion.div>
+            <Trophy className="w-16 h-16 sm:w-20 sm:h-20 text-yellow-500 mx-auto mb-4" />
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-2">Enhorabona!</h1>
+            <p className="text-slate-600 max-w-2xl mx-auto">
+              Has completat tots els nivells i has après les regles del Joc de la Vida de Conway.
+              A continuació pots consultar la teva <strong>nota final</strong> i el desglossament d'intents per cada nivell.
+            </p>
+          </motion.div>
+
+          {/* Resum complet amb la nota i detall */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <ScoreSummary
+              totalLevels={LEVELS.length}
+              levelStats={levelStats}
+              currentLevelIndex={LEVELS.length}
+              totalChecks={totalChecks}
+              totalErrors={totalErrors}
+              isCompleted={true}
+              onResetProgress={handleResetAll}
+              levelNames={LEVELS.map(l => l.description.split('-')[0].trim() || `Nivell ${l.id}`)}
+            />
+          </motion.div>
+
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => {
+                setCurrentLevelIndex(0);
+                setGameState('playing');
+              }}
+              className="py-3 px-6 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-medium transition-colors flex items-center gap-2 cursor-pointer shadow"
+            >
+              <RotateCcw className="w-5 h-5" />
+              Revisar els nivells
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -814,12 +851,9 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className="mt-8 max-w-sm w-full bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
-                  <p className="text-xs text-slate-600 uppercase tracking-wider font-bold mb-2">Codi de guardat (Nivell superat)</p>
-                  <code className="block w-full p-2 bg-white border border-slate-300 rounded text-blue-700 text-xs font-mono break-all select-all">
-                    {generateSaveCode(currentLevelIndex + 1, totalChecks, totalErrors, levelStats)}
-                  </code>
-                  <p className="text-xs text-slate-500 mt-2">Guarda aquest codi per poder continuar demà des d'on ho has deixat, o dóna-li al professor/a quan acabis.</p>
+                <div className="mt-6 flex items-center justify-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-200 shadow-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Progrés desat automàticament al teu navegador</span>
                 </div>
               </motion.div>
             )}
@@ -894,87 +928,39 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
             >
               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                   <BarChart2 className="w-5 h-5 text-blue-600" />
-                  Tauler de Control del Professorat
+                  Tauler de Resum i Qualificació
                 </h2>
                 <button 
                   onClick={() => setShowSummary(false)}
-                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors cursor-pointer"
+                  aria-label="Tancar"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               
               <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50">
-                {/* Global Stats */}
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">Vista Global</h3>
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <div className="text-3xl font-bold text-blue-600 mb-1">{totalChecks}</div>
-                    <div className="text-sm font-medium text-slate-500">Intents Totals</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <div className="text-3xl font-bold text-red-500 mb-1">{totalErrors}</div>
-                    <div className="text-sm font-medium text-slate-500">Errors Totals</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <div className="text-3xl font-bold text-emerald-500 mb-1">
-                      {gameState === 'completed' ? LEVELS.length : currentLevelIndex} <span className="text-lg text-slate-400">/ {LEVELS.length}</span>
-                    </div>
-                    <div className="text-sm font-medium text-slate-500">Nivells Superats</div>
-                  </div>
-                </div>
-
-                {/* Per Level Stats */}
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">Desglossament per Nivells</h3>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="py-3 px-4 text-sm font-semibold text-slate-600">Nivell</th>
-                        <th className="py-3 px-4 text-sm font-semibold text-slate-600 text-center">Intents</th>
-                        <th className="py-3 px-4 text-sm font-semibold text-slate-600 text-center">Errors</th>
-                        <th className="py-3 px-4 text-sm font-semibold text-slate-600 text-center">Estat</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {LEVELS.map((l, idx) => {
-                        const stats = levelStats[l.id] || { checks: 0, errors: 0 };
-                        const isCurrent = idx === currentLevelIndex && gameState !== 'completed';
-                        const isPassed = idx < currentLevelIndex || gameState === 'completed';
-                        
-                        return (
-                          <tr key={l.id} className={cn("transition-colors", isCurrent ? "bg-blue-50/50" : "hover:bg-slate-50")}>
-                            <td className="py-3 px-4 text-sm font-medium text-slate-800">
-                              {l.description.split('-')[0].trim() || `Nivell ${l.id}`}
-                            </td>
-                            <td className="py-3 px-4 text-sm text-center font-medium text-slate-600">{stats.checks}</td>
-                            <td className="py-3 px-4 text-sm text-center font-medium text-red-500">{stats.errors > 0 ? stats.errors : '-'}</td>
-                            <td className="py-3 px-4 text-sm text-center">
-                              {isPassed ? (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Superat</span>
-                              ) : isCurrent ? (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">En curs</span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Pendent</span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <ScoreSummary
+                  totalLevels={LEVELS.length}
+                  levelStats={levelStats}
+                  currentLevelIndex={currentLevelIndex}
+                  totalChecks={totalChecks}
+                  totalErrors={totalErrors}
+                  isCompleted={gameState === 'completed'}
+                  onResetProgress={handleResetAll}
+                  levelNames={LEVELS.map(l => l.description.split('-')[0].trim() || `Nivell ${l.id}`)}
+                />
               </div>
               
               <div className="px-6 py-4 bg-white border-t border-slate-100 flex justify-end shrink-0">
                 <button 
                   onClick={() => setShowSummary(false)}
-                  className="px-6 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium transition-colors"
+                  className="px-6 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium transition-colors cursor-pointer"
                 >
                   Tancar Tauler
                 </button>
