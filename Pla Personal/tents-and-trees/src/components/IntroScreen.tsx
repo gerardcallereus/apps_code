@@ -1,28 +1,17 @@
 import React, { useState } from 'react';
-import { Tent, TreePine, AlertTriangle, Play, CheckCircle2, Eye, KeyRound, AlertCircle } from 'lucide-react';
+import { Tent, TreePine, AlertTriangle, Play, CheckCircle2, Eye, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GameStats } from '../App';
-import { decodeSaveData } from '../lib/saveCode';
 
 interface IntroScreenProps {
   onStart: () => void;
-  onRestore: (levelIndex: number, stats: GameStats) => void;
+  savedLevelIndex?: number | null;
+  onContinue?: () => void;
+  onResetProgress?: () => void;
 }
 
-export function IntroScreen({ onStart, onRestore }: IntroScreenProps) {
-  const [showRestore, setShowRestore] = useState(false);
-  const [restoreCode, setRestoreCode] = useState('');
-  const [restoreError, setRestoreError] = useState(false);
-
-  const handleRestore = () => {
-    const data = decodeSaveData(restoreCode);
-    if (data) {
-      setRestoreError(false);
-      onRestore(data.levelIndex, data.stats);
-    } else {
-      setRestoreError(true);
-    }
-  };
+export function IntroScreen({ onStart, savedLevelIndex, onContinue, onResetProgress }: IntroScreenProps) {
+  const [confirmReset, setConfirmReset] = useState(false);
+  const hasSavedGame = typeof savedLevelIndex === 'number' && savedLevelIndex >= 0;
 
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4 font-sans text-stone-800">
@@ -100,60 +89,64 @@ export function IntroScreen({ onStart, onRestore }: IntroScreenProps) {
               </div>
               <div>
                 <h3 className="font-bold text-lg mb-1">Control d'aprenentatge</h3>
-                <p className="text-stone-600 leading-relaxed">Pensa bé abans de comprovar! El joc registrarà els teus intents i errors perquè el teu professor/a pugui veure el teu progrés.</p>
+                <p className="text-stone-600 leading-relaxed">El joc guarda automàticament el teu progrés i comptabilitza els intents a cada nivell per a la teva nota final!</p>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col items-center gap-4">
-            <button
-              onClick={onStart}
-              className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-xl font-bold py-4 px-10 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3"
-            >
-              <Play className="w-6 h-6 fill-current" />
-              Començar a jugar
-            </button>
-            
-            <button
-              onClick={() => setShowRestore(!showRestore)}
-              className="text-stone-500 hover:text-stone-800 font-medium transition-colors flex items-center gap-2"
-            >
-              <KeyRound className="w-4 h-4" />
-              Tinc un codi per restaurar la partida
-            </button>
-
-            <AnimatePresence>
-              {showRestore && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="w-full max-w-sm overflow-hidden"
+            {hasSavedGame ? (
+              <>
+                <button
+                  onClick={onContinue || onStart}
+                  className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-xl font-bold py-4 px-10 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3"
                 >
-                  <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 flex flex-col gap-3 mt-2">
-                    <input 
-                      type="text" 
-                      placeholder="Introdueix el codi aquí..." 
-                      value={restoreCode}
-                      onChange={(e) => setRestoreCode(e.target.value)}
-                      className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono text-sm"
-                    />
-                    {restoreError && (
-                      <p className="text-red-500 text-sm flex items-center gap-1 font-medium">
-                        <AlertCircle className="w-4 h-4" /> Codi invàlid o malformat.
-                      </p>
-                    )}
-                    <button
-                      onClick={handleRestore}
-                      disabled={!restoreCode.trim()}
-                      className="w-full bg-stone-800 hover:bg-stone-900 disabled:bg-stone-300 text-white font-bold py-2 rounded-lg transition-colors"
-                    >
-                      Restaurar
-                    </button>
+                  <Play className="w-6 h-6 fill-current" />
+                  Continuar partida (Nivell {savedLevelIndex + 1})
+                </button>
+
+                {!confirmReset ? (
+                  <button
+                    onClick={() => setConfirmReset(true)}
+                    className="text-stone-500 hover:text-stone-800 text-sm font-medium transition-colors flex items-center gap-2 mt-1"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Vols començar de nou des del nivell 1?
+                  </button>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left mt-2">
+                    <p className="text-xs text-amber-800 font-medium">
+                      Segur? Es reiniciarà el progrés guardat al navegador.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setConfirmReset(false);
+                          if (onResetProgress) onResetProgress();
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Sí, reiniciar
+                      </button>
+                      <button
+                        onClick={() => setConfirmReset(false)}
+                        className="bg-stone-200 hover:bg-stone-300 text-stone-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Cancel·lar
+                      </button>
+                    </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={onStart}
+                className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-xl font-bold py-4 px-10 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3"
+              >
+                <Play className="w-6 h-6 fill-current" />
+                Començar a jugar
+              </button>
+            )}
           </div>
         </div>
       </motion.div>

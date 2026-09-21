@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { generatePuzzle, checkSolution, Puzzle, CellState, Position } from './lib/puzzle';
 import { Grid } from './components/Grid';
 import { IntroScreen } from './components/IntroScreen';
 import { SummaryScreen } from './components/SummaryScreen';
 import { RulesModal } from './components/RulesModal';
-import { Tent, Trophy, ArrowRight, RefreshCw, BarChart3, CheckCircle2, AlertCircle, Info, Copy, Check } from 'lucide-react';
+import { Tent, Trophy, ArrowRight, RefreshCw, BarChart3, CheckCircle2, AlertCircle, Info, Award } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
-import { encodeSaveData } from './lib/saveCode';
+import { loadGame, saveGame, clearGame, SavedGameData } from './lib/storage';
 
 const LEVELS = [
   { size: 5, tents: 3 },
@@ -41,6 +41,7 @@ export interface LevelStats {
 export type GameStats = Record<number, LevelStats>;
 
 export default function App() {
+  const [savedData, setSavedData] = useState<SavedGameData | null>(() => loadGame());
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'summary'>('intro');
   const [levelIndex, setLevelIndex] = useState(0);
   const [loadedLevel, setLoadedLevel] = useState<number | null>(null);
@@ -50,9 +51,9 @@ export default function App() {
   const [stats, setStats] = useState<GameStats>({});
   const [feedback, setFeedback] = useState<'error' | null>(null);
   const [showRules, setShowRules] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const hasInitializedRef = useRef(false);
 
-  const loadLevel = useCallback((index: number) => {
+  const loadLevel = useCallback((index: number, initialGrid?: CellState[][]) => {
     const config = LEVELS[index];
     if (!config) return;
     
@@ -60,14 +61,18 @@ export default function App() {
       // Create static puzzles using index + 100 as the deterministic seed for generation
       const newPuzzle = generatePuzzle(config.size, config.tents, index + 100);
       setPuzzle(newPuzzle);
-      setGridState(Array.from({ length: config.size }, () => Array(config.size).fill('empty')));
+      if (initialGrid && initialGrid.length === config.size && initialGrid[0]?.length === config.size) {
+        setGridState(initialGrid);
+      } else {
+        setGridState(Array.from({ length: config.size }, () => Array(config.size).fill('empty')));
+      }
       setIsSolved(false);
       setFeedback(null);
       setLoadedLevel(index);
     } catch (e) {
       console.error(e);
       // Retry if generation fails
-      setTimeout(() => loadLevel(index), 100);
+      setTimeout(() => loadLevel(index, initialGrid), 100);
     }
   }, []);
 
@@ -76,6 +81,38 @@ export default function App() {
       loadLevel(levelIndex);
     }
   }, [levelIndex, loadedLevel, loadLevel]);
+
+  // Autosave when in playing or summary states
+  useEffect(() => {
+    if (!hasInitializedRef.current) return;
+    if (gameState === 'playing' || gameState === 'summary') {
+      saveGame(levelIndex, stats, gridState);
+    }
+  }, [levelIndex, stats, gridState, gameState]);
+
+  const handleStartGame = () => {
+    hasInitializedRef.current = true;
+    setGameState('playing');
+  };
+
+  const handleContinueGame = () => {
+    hasInitializedRef.current = true;
+    if (savedData) {
+      setLevelIndex(savedData.levelIndex);
+      setStats(savedData.stats || {});
+      loadLevel(savedData.levelIndex, savedData.gridState);
+    }
+    setGameState('playing');
+  };
+
+  const handleResetProgress = () => {
+    clearGame();
+    setSavedData(null);
+    setStats({});
+    setLevelIndex(0);
+    loadLevel(0);
+    hasInitializedRef.current = true;
+  };
 
   const handleCheck = () => {
     if (!puzzle || isSolved) return;
@@ -112,7 +149,7 @@ export default function App() {
 
     setStats(prev => {
       const currentStats = prev[levelIndex] || { checks: 0, errors: 0, solved: false };
-      return {
+      const updatedStats = {
         ...prev,
         [levelIndex]: {
           ...currentStats,
@@ -121,6 +158,9 @@ export default function App() {
           solved: solved || currentStats.solved
         }
       };
+      // Immediately autosave on check
+      saveGame(levelIndex, updatedStats, gridState);
+      return updatedStats;
     });
 
     if (solved) {
@@ -169,7 +209,9 @@ export default function App() {
 
   const handleNextLevel = () => {
     if (levelIndex < LEVELS.length - 1) {
-      setLevelIndex(prev => prev + 1);
+      const nextIndex = levelIndex + 1;
+      setLevelIndex(nextIndex);
+      saveGame(nextIndex, stats);
     }
   };
 
@@ -177,31 +219,37 @@ export default function App() {
     loadLevel(levelIndex);
   };
 
-  const handleRestore = (restoredLevel: number, restoredStats: GameStats) => {
-    setStats(restoredStats);
-    setLevelIndex(restoredLevel);
-    setGameState('playing');
-  };
-
-  const handleCopyCode = () => {
-    const nextLevelIndex = levelIndex < LEVELS.length - 1 ? levelIndex + 1 : levelIndex;
-    const saveCode = encodeSaveData(nextLevelIndex, stats);
-    navigator.clipboard.writeText(saveCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   if (gameState === 'intro') {
-    return <IntroScreen onStart={() => setGameState('playing')} onRestore={handleRestore} />;
+    return (
+      <IntroScreen 
+        onStart={handleStartGame} 
+        savedLevelIndex={savedData ? savedData.levelIndex : null}
+        onContinue={handleContinueGame}
+        onResetProgress={handleResetProgress}
+      />
+    );
   }
 
   if (gameState === 'summary') {
-    return <SummaryScreen stats={stats} totalLevels={LEVELS.length} onBack={() => setGameState('playing')} />;
+    return (
+      <SummaryScreen 
+        stats={stats} 
+        totalLevels={LEVELS.length} 
+        onBack={() => setGameState('playing')}
+        onResetProgress={() => {
+          handleResetProgress();
+          setGameState('intro');
+        }}
+      />
+    );
   }
 
   if (!puzzle) {
     return <div className="min-h-screen flex items-center justify-center">Carregant...</div>;
   }
+
+  const currentLevelAttempts = stats[levelIndex]?.checks || 1;
+  const currentLevelErrors = stats[levelIndex]?.errors || 0;
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 font-sans pb-12">
@@ -236,10 +284,10 @@ export default function App() {
             <button 
               onClick={() => setGameState('summary')}
               className="flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-800 text-sm font-bold py-1.5 px-3 rounded-xl transition-colors"
-              title="Resum per al Professorat"
+              title="Resum i Nota Final"
             >
               <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Resum Professor</span>
+              <span className="hidden sm:inline">Resum i Nota</span>
             </button>
           </div>
         </div>
@@ -294,26 +342,19 @@ export default function App() {
                     <Trophy className="w-8 h-8" />
                   </div>
                   <h2 className="text-2xl font-bold text-stone-800 mb-2">Molt bé!</h2>
-                  <p className="text-stone-600 mb-6">
+                  <p className="text-stone-600 mb-4">
                     Has resolt el trencaclosques correctament.
                   </p>
                   
-                  <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-6 text-left">
-                    <p className="text-xs font-bold text-stone-500 uppercase mb-2">Codi de seguretat (Guarda'l!)</p>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-white border border-stone-200 px-3 py-2 rounded-lg flex-1 overflow-hidden">
-                        <code className="text-xs font-mono text-stone-800/80 break-all select-all">
-                          {encodeSaveData(levelIndex < LEVELS.length - 1 ? levelIndex + 1 : levelIndex, stats)}
-                        </code>
-                      </div>
-                      <button 
-                        onClick={handleCopyCode}
-                        title="Copiar codi"
-                        className="p-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg transition-colors flex-shrink-0 flex items-center justify-center"
-                      >
-                        {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                      </button>
-                    </div>
+                  <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-6 text-center">
+                    <p className="text-sm font-semibold text-stone-700">
+                      Completat en {currentLevelAttempts} {currentLevelAttempts === 1 ? 'intent' : 'intents'}!
+                    </p>
+                    <p className="text-xs text-stone-500 mt-1">
+                      {currentLevelErrors === 0 
+                        ? 'Sense cap error! Puntuació màxima.' 
+                        : `${currentLevelErrors} ${currentLevelErrors === 1 ? 'error comès' : 'errors comesos'}.`}
+                    </p>
                   </div>
 
                   {levelIndex < LEVELS.length - 1 ? (
@@ -325,8 +366,17 @@ export default function App() {
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   ) : (
-                    <div className="text-green-600 font-bold text-lg">
-                      Has completat tots els 20 nivells!
+                    <div className="flex flex-col gap-3">
+                      <div className="text-emerald-700 font-bold text-base">
+                        Has completat tots els 20 nivells! 🎉
+                      </div>
+                      <button 
+                        onClick={() => setGameState('summary')}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg"
+                      >
+                        <Award className="w-5 h-5" />
+                        Veure resum i nota final
+                      </button>
                     </div>
                   )}
                 </div>
