@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Check, Info, ArrowRight, RotateCcw, HelpCircle, Trophy, X, BarChart2, Brain, Activity, List, CheckCircle2 } from 'lucide-react';
+import { Play, Check, Info, ArrowRight, RotateCcw, HelpCircle, Trophy, X, BarChart2, Brain, Activity, List, CheckCircle2, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { saveGame, loadGame, clearGame, LevelStat } from './storage';
 import { ScoreSummary } from './components/ScoreSummary';
+import { TutorialLevel } from './components/TutorialLevel';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -211,58 +212,60 @@ const LEVELS: Level[] = [
   {
     id: 17,
     size: 7,
-    description: "Nivell 17 - Línia de 4. Què passa quan tenim 4 cèl·lules en línia? Compte amb les cèl·lules del mig i els extrems.",
+    description: "Nivell 17 - Nau Espacial Lleugera (LWSS). Mida 7x7. Una nau espacial que viatja en línia recta. Quines noves cèl·lules naixeran per reproducció per continuar el seu avanç?",
     initialState: [
       [0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0],
-      [0, 1, 1, 1, 1, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 1, 0, 0, 1, 0],
+      [0, 0, 0, 0, 0, 0, 1],
+      [0, 0, 1, 0, 0, 0, 1],
+      [0, 0, 0, 1, 1, 1, 1],
       [0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0],
     ]
   },
   {
     id: 18,
-    size: 7,
-    description: "Nivell 18 - Interacció. Un Bloc i un Parpelleig estan molt a prop. La seva proximitat alterarà el seu comportament normal?",
+    size: 8,
+    description: "Nivell 18 - La Creu Oscil·ladora (Pulsar Core). Mida 8x8. Nucli oscil·lador d'alta simetria. Dedueix quines cèl·lules centrals moren per sobrepoblació i quins vèrtexs reneixen.",
     initialState: [
-      [0, 0, 0, 0, 0, 0, 0],
-      [0, 1, 1, 0, 0, 0, 0],
-      [0, 1, 1, 0, 0, 0, 0],
-      [0, 0, 0, 0, 1, 0, 0],
-      [0, 0, 0, 0, 1, 0, 0],
-      [0, 0, 0, 0, 1, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 1, 1, 0, 0, 1, 1, 0],
+      [0, 1, 1, 0, 0, 1, 1, 0],
+      [0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 0, 0, 1, 1, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
     ]
   },
   {
     id: 19,
-    size: 7,
-    description: "Nivell 19 - El R-pentòmino. Aquest petit patró genera una reacció caòtica que dura molt de temps. Quina serà la seva primera transformació?",
+    size: 8,
+    description: "Nivell 19 - Reacció en Cadena (L'Acorn / La Gla). Mida 8x8. Un famós patró metuxalem: només 7 cèl·lules inicials asimètriques generen una metamorfosi sorprenent. Pensa cel·la per cel·la!",
     initialState: [
-      [0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 1, 1, 0, 0],
-      [0, 0, 1, 1, 0, 0, 0],
-      [0, 0, 0, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0],
+      [0, 1, 1, 0, 0, 1, 1, 1],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
     ]
   },
   {
     id: 20,
     size: 8,
-    description: "Nivell 20 - Col·lisió Imminent! Un Planador s'acosta perillosament a un Bloc. Calcula amb precisió l'impacte en aquesta quadrícula de 8x8. Sort!",
+    description: "Nivell 20 - El Gran Xoc Cel·lular. Mida 8x8. Un Planador impacta de ple contra un Parpelleig mentre un Bloc resisteix a la base. Avalua amb precisió la zona de col·lisió!",
     initialState: [
-      [0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 1, 0, 0, 0, 0, 0],
       [0, 0, 0, 1, 0, 0, 0, 0],
       [0, 1, 1, 1, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 1, 1, 0],
-      [0, 0, 0, 0, 0, 1, 1, 0],
+      [0, 0, 0, 0, 1, 1, 1, 0],
       [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1, 1, 0],
+      [0, 0, 0, 0, 0, 1, 1, 0],
     ]
   }
 ];
@@ -308,10 +311,11 @@ export default function App() {
   const getCellSizeClass = (size: number) => {
     if (size <= 4) return "w-12 h-12 sm:w-16 sm:h-16";
     if (size <= 6) return "w-10 h-10 sm:w-12 sm:h-12";
-    return "w-8 h-8 sm:w-10 sm:h-10";
+    if (size <= 7) return "w-8 h-8 sm:w-10 sm:h-10";
+    return "w-7 h-7 sm:w-9 sm:h-9";
   };
   const [playerGrid, setPlayerGrid] = useState<number[][]>([]);
-  const [gameState, setGameState] = useState<'intro' | 'video' | 'playing' | 'checked' | 'completed'>('intro');
+  const [gameState, setGameState] = useState<'intro' | 'video' | 'tutorial' | 'playing' | 'checked' | 'completed'>('intro');
   const [showRules, setShowRules] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -531,23 +535,39 @@ export default function App() {
                       Veure Nota i Resum
                     </button>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-blue-100">
+                  <div className="mt-4 pt-4 border-t border-blue-100 flex items-center justify-between text-xs text-slate-500">
+                    <button
+                      onClick={() => setGameState('tutorial')}
+                      className="hover:text-blue-700 font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                      Repassar Tutorial Guiat
+                    </button>
                     <button
                       onClick={handleResetAll}
-                      className="text-xs text-slate-500 hover:text-red-600 font-medium transition-colors cursor-pointer"
+                      className="hover:text-red-600 font-medium transition-colors cursor-pointer"
                     >
-                      Començar una nova partida des de zero
+                      Començar de zero
                     </button>
                   </div>
                 </div>
               ) : (
-                <button 
-                  onClick={() => setGameState('video')}
-                  className="py-4 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2 mx-auto cursor-pointer"
-                >
-                  <Play className="w-5 h-5 fill-current" />
-                  Començar l'Aventura
-                </button>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button 
+                    onClick={() => setGameState('video')}
+                    className="py-4 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Play className="w-5 h-5 fill-current" />
+                    Començar l'Aventura
+                  </button>
+                  <button 
+                    onClick={() => setGameState('tutorial')}
+                    className="py-3.5 px-6 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-full font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    <Lightbulb className="w-4 h-4 text-amber-600" />
+                    Tutorial Guiat de Tècniques
+                  </button>
+                </div>
               )}
 
               <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500">
@@ -586,17 +606,42 @@ export default function App() {
             ></iframe>
           </div>
 
-          <div className="text-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button 
-              onClick={() => setGameState('playing')}
-              className="py-4 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2 mx-auto"
+              onClick={() => setGameState('tutorial')}
+              className="py-4 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-base sm:text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2 cursor-pointer"
             >
-              <Play className="w-5 h-5 fill-current" />
-              Anar al Nivell 1
+              <Lightbulb className="w-5 h-5 text-amber-300" />
+              Continuar al Tutorial Guiat
+            </button>
+            <button 
+              onClick={() => {
+                setCurrentLevelIndex(0);
+                setGameState('playing');
+              }}
+              className="py-3 px-6 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-full font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer"
+            >
+              Saltar directament al Nivell 1
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </motion.div>
       </div>
+    );
+  }
+
+  if (gameState === 'tutorial') {
+    return (
+      <TutorialLevel
+        onComplete={() => {
+          setCurrentLevelIndex(0);
+          setGameState('playing');
+        }}
+        onSkip={() => {
+          setCurrentLevelIndex(0);
+          setGameState('playing');
+        }}
+      />
     );
   }
 
@@ -673,17 +718,26 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <button 
+            onClick={() => setGameState('tutorial')}
+            className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-full transition-colors cursor-pointer"
+            aria-label="Tutorial Guiat de Tècniques"
+            title="Tutorial Guiat de Tècniques"
+          >
+            <Lightbulb className="w-6 h-6" />
+          </button>
+          <button 
             onClick={() => setShowSummary(true)}
-            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer"
             aria-label="Veure resum"
-            title="Resum del professor"
+            title="Resum i Nota"
           >
             <BarChart2 className="w-6 h-6" />
           </button>
           <button 
             onClick={() => setShowRules(true)}
-            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer"
             aria-label="Veure regles"
+            title="Regles del Joc"
           >
             <HelpCircle className="w-6 h-6" />
           </button>
