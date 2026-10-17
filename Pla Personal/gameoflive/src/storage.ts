@@ -11,6 +11,7 @@ export interface SavedGameData {
   totalErrors: number;
   levelStats: Record<number, LevelStat>;
   gameState: 'intro' | 'playing' | 'completed';
+  tutorialCompleted?: boolean;
   lastUpdated: number;
 }
 
@@ -21,7 +22,8 @@ export function saveGame(
   totalChecks: number,
   totalErrors: number,
   levelStats: Record<number, LevelStat>,
-  gameState: 'intro' | 'playing' | 'completed' = 'playing'
+  gameState: 'intro' | 'playing' | 'completed' = 'playing',
+  tutorialCompleted: boolean = false
 ): void {
   try {
     const data: SavedGameData = {
@@ -31,6 +33,7 @@ export function saveGame(
       totalErrors,
       levelStats,
       gameState,
+      tutorialCompleted,
       lastUpdated: Date.now(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

@@ -606,23 +606,14 @@ export default function App() {
             ></iframe>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="text-center">
             <button 
               onClick={() => setGameState('tutorial')}
-              className="py-4 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-base sm:text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2 cursor-pointer"
+              className="py-4 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-base sm:text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
             >
               <Lightbulb className="w-5 h-5 text-amber-300" />
-              Continuar al Tutorial Guiat
-            </button>
-            <button 
-              onClick={() => {
-                setCurrentLevelIndex(0);
-                setGameState('playing');
-              }}
-              className="py-3 px-6 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-full font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer"
-            >
-              Saltar directament al Nivell 1
-              <ArrowRight className="w-4 h-4" />
+              <span>Continuar al Tutorial Guiat Obligatori</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         </motion.div>
@@ -634,10 +625,6 @@ export default function App() {
     return (
       <TutorialLevel
         onComplete={() => {
-          setCurrentLevelIndex(0);
-          setGameState('playing');
-        }}
-        onSkip={() => {
           setCurrentLevelIndex(0);
           setGameState('playing');
         }}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Check, RotateCcw, Lightbulb, Sparkles, Brain, CheckCircle2, ChevronRight, Eye } from 'lucide-react';
+import { ArrowRight, Check, RotateCcw, Lightbulb, Sparkles, Brain, CheckCircle2, ChevronRight, AlertCircle, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { clsx, type ClassValue } from 'clsx';
@@ -11,59 +11,171 @@ function cn(...inputs: ClassValue[]) {
 
 interface TutorialLevelProps {
   onComplete: () => void;
-  onSkip: () => void;
 }
 
-const TUTORIAL_INITIAL = [
-  [0, 0, 0, 0],
-  [0, 1, 1, 0],
-  [0, 1, 0, 0],
-  [0, 0, 0, 0],
+interface TutorialExample {
+  id: number;
+  title: string;
+  subtitle: string;
+  size: number;
+  initial: number[][];
+  expected: number[][];
+  step1Explanation: string;
+  step2Explanation: string;
+  step3Explanation: string;
+  liveNeighborCounts: { r: number; c: number; count: number; outcome: 'mor' | 'viu' }[];
+  candidateBirthCells: { r: number; c: number; count: number }[];
+}
+
+const EXAMPLES: TutorialExample[] = [
+  {
+    id: 1,
+    title: "Exemple 1 de 3: Solitud i Mort",
+    subtitle: "Comprendre com les cèl·lules aïllades moren quan tenen menys de 2 veïns",
+    size: 3,
+    initial: [
+      [0, 1, 0],
+      [0, 1, 0],
+      [0, 0, 0],
+    ],
+    expected: [
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+    ],
+    liveNeighborCounts: [
+      { r: 0, c: 1, count: 1, outcome: 'mor' },
+      { r: 1, c: 1, count: 1, outcome: 'mor' },
+    ],
+    candidateBirthCells: [],
+    step1Explanation: "Mira les dues cèl·lules verdes. Cadascuna només toca l'altra (1 veí viu). Com que tenen menys de 2 veïns, ambdues moriran per solitud!",
+    step2Explanation: "Cap casella buida toca 3 cèl·lules vives (com a màxim en toquen 2). Per tant, cap cèl·lula buida pot renéixer per reproducció.",
+    step3Explanation: "Com que les dues verdes moren i cap buida reneix, a la següent generació tota la quadrícula quedarà buida! Deixa totes les caselles en blanc i prem Comprovar.",
+  },
+  {
+    id: 2,
+    title: "Exemple 2 de 3: Reproducció i Naixement",
+    subtitle: "Comprendre quan reneix una cèl·lula morta en tocar exactament 3 veïns vius",
+    size: 3,
+    initial: [
+      [1, 1, 0],
+      [1, 0, 0],
+      [0, 0, 0],
+    ],
+    expected: [
+      [1, 1, 0],
+      [1, 1, 0],
+      [0, 0, 0],
+    ],
+    liveNeighborCounts: [
+      { r: 0, c: 0, count: 2, outcome: 'viu' },
+      { r: 0, c: 1, count: 2, outcome: 'viu' },
+      { r: 1, c: 0, count: 2, outcome: 'viu' },
+    ],
+    candidateBirthCells: [
+      { r: 1, c: 1, count: 3 },
+    ],
+    step1Explanation: "Analitzem les 3 cèl·lules verdes. Cadascuna té exactament 2 veïns vius. Segons la Regla de Supervivència (2 o 3 veïns), totes tres sobreviuran!",
+    step2Explanation: "Descarta les cel·les blanques allunyades. Fixa't en la cantonada buida del mig: toca exactament les 3 cèl·lules verdes! Segons la Regla de Reproducció, aquesta cel·la reneix!",
+    step3Explanation: "Les 3 supervivents més la nova cèl·lula nascuda formen un quadrat de 2x2 (el Bloc). Fes clic a les 4 caselles per dibuixar-les i prem Comprovar.",
+  },
+  {
+    id: 3,
+    title: "Exemple 3 de 3: Supervivència, Mort i Naixement Combinats",
+    subtitle: "Comprendre com es combina tot alhora per transformar una línia horitzontal en vertical",
+    size: 3,
+    initial: [
+      [0, 0, 0],
+      [1, 1, 1],
+      [0, 0, 0],
+    ],
+    expected: [
+      [0, 1, 0],
+      [0, 1, 0],
+      [0, 1, 0],
+    ],
+    liveNeighborCounts: [
+      { r: 1, c: 0, count: 1, outcome: 'mor' },
+      { r: 1, c: 1, count: 2, outcome: 'viu' },
+      { r: 1, c: 2, count: 1, outcome: 'mor' },
+    ],
+    candidateBirthCells: [
+      { r: 0, c: 1, count: 3 },
+      { r: 2, c: 1, count: 3 },
+    ],
+    step1Explanation: "A la línia horitzontal, els dos extrems només tenen 1 veí viu (moren per solitud). La cèl·lula del mig té 2 veïns vius (sobreviu).",
+    step2Explanation: "A dalt i a sota de la cel·la central hi ha dues caselles buides que toquen cadascuna les 3 cel·les de la línia! Totes dues reuneixen 3 veïns i reneixen!",
+    step3Explanation: "Només sobreviu la del mig i reneixen la de dalt i la de sota. La línia horitzontal es transforma en una línia vertical (el Parpelleig)! Dibuixa-la i prem Comprovar.",
+  },
 ];
 
-const TUTORIAL_EXPECTED = [
-  [0, 0, 0, 0],
-  [0, 1, 1, 0],
-  [0, 1, 1, 0],
-  [0, 0, 0, 0],
-];
-
-export function TutorialLevel({ onComplete, onSkip }: TutorialLevelProps) {
+export function TutorialLevel({ onComplete }: TutorialLevelProps) {
+  const [exampleIndex, setExampleIndex] = useState(0);
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const [maxStepReached, setMaxStepReached] = useState<1 | 2 | 3>(1);
+
+  const currentExample = EXAMPLES[exampleIndex];
+
   const [playerGrid, setPlayerGrid] = useState<number[][]>(() =>
-    Array(4).fill(0).map(() => Array(4).fill(0))
+    Array(currentExample.size).fill(0).map(() => Array(currentExample.size).fill(0))
   );
   const [isChecked, setIsChecked] = useState(false);
   const [showError, setShowError] = useState(false);
 
+  // Quan canviem d'exemple, reiniciem estat
+  const goToExample = (idx: number) => {
+    setExampleIndex(idx);
+    setActiveStep(1);
+    setMaxStepReached(1);
+    setPlayerGrid(Array(EXAMPLES[idx].size).fill(0).map(() => Array(EXAMPLES[idx].size).fill(0)));
+    setIsChecked(false);
+    setShowError(false);
+  };
+
+  const handleStepClick = (step: 1 | 2 | 3) => {
+    // Només es pot anar als passos ja desbloquejats
+    if (step <= maxStepReached) {
+      setActiveStep(step);
+    }
+  };
+
+  const advanceToStep = (nextStep: 2 | 3) => {
+    setActiveStep(nextStep);
+    if (nextStep > maxStepReached) {
+      setMaxStepReached(nextStep);
+    }
+  };
+
   const toggleCell = (r: number, c: number) => {
-    if (isChecked) return;
+    if (activeStep !== 3 || isChecked) return;
     const next = playerGrid.map(row => [...row]);
     next[r][c] = next[r][c] === 1 ? 0 : 1;
     setPlayerGrid(next);
   };
 
   const handleCheck = () => {
-    const isCorrect = JSON.stringify(playerGrid) === JSON.stringify(TUTORIAL_EXPECTED);
+    const isCorrect = JSON.stringify(playerGrid) === JSON.stringify(currentExample.expected);
     if (isCorrect) {
       setIsChecked(true);
       setShowError(false);
       confetti({
-        particleCount: 120,
-        spread: 80,
+        particleCount: 100,
+        spread: 70,
         origin: { y: 0.6 },
-        colors: ['#10b981', '#3b82f6', '#8b5cf6'],
+        colors: ['#10b981', '#3b82f6', '#f59e0b'],
       });
     } else {
       setShowError(true);
-      setTimeout(() => setShowError(false), 3500);
+      setTimeout(() => setShowError(false), 4000);
     }
   };
 
-  const handleReset = () => {
-    setPlayerGrid(Array(4).fill(0).map(() => Array(4).fill(0)));
-    setIsChecked(false);
-    setShowError(false);
+  const handleNextExample = () => {
+    if (exampleIndex < EXAMPLES.length - 1) {
+      goToExample(exampleIndex + 1);
+    } else {
+      onComplete();
+    }
   };
 
   return (
@@ -75,159 +187,239 @@ export function TutorialLevel({ onComplete, onSkip }: TutorialLevelProps) {
             <Lightbulb className="w-6 h-6 text-amber-600" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 mb-0.5">
-              Nivell 0 · Entrenament
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 mb-0.5">
+              Tutorial Guiat Obligatori · {currentExample.title}
             </div>
-            <h1 className="text-xl font-bold leading-tight text-slate-900">Tutorial Guiat: Bones Tècniques</h1>
+            <h1 className="text-xl font-bold leading-tight text-slate-900">{currentExample.subtitle}</h1>
           </div>
         </div>
 
-        <button
-          onClick={onSkip}
-          className="text-sm font-semibold text-slate-500 hover:text-slate-800 px-4 py-2 rounded-xl hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
-        >
-          <span>Saltar al Nivell 1</span>
-          <ChevronRight className="w-4 h-4" />
-        </button>
+        {/* Indicador de 3 exemples */}
+        <div className="flex items-center gap-2">
+          {EXAMPLES.map((ex, i) => (
+            <div
+              key={ex.id}
+              className={cn(
+                "px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1",
+                i === exampleIndex
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : i < exampleIndex
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-slate-100 text-slate-400"
+              )}
+            >
+              {i < exampleIndex && <Check className="w-3 h-3 stroke-[3]" />}
+              <span>Ex. {i + 1}/3</span>
+            </div>
+          ))}
+        </div>
       </header>
 
       {/* Contingut Principal */}
       <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col">
-        {/* Banner explicatiu amb pestanyes de tècnica */}
+        {/* Caixa de Metodologia: Passos 1 -> 2 -> 3 */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
-          <h2 className="text-base sm:text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
-            <Brain className="w-5 h-5 text-blue-600" />
-            Metodologia per resoldre qualsevol escenari sense bloquejar-te
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <button
-              onClick={() => setActiveStep(1)}
-              className={cn(
-                "p-3 rounded-xl border text-left transition-all cursor-pointer",
-                activeStep === 1
-                  ? "border-blue-500 bg-blue-50/70 shadow-sm"
-                  : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
-              )}
-            >
-              <div className="flex items-center gap-2 font-bold text-sm text-slate-800 mb-1">
-                <span className={cn(
-                  "w-5 h-5 rounded-full flex items-center justify-center text-xs",
-                  activeStep === 1 ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-700"
-                )}>1</span>
-                Tècnica 1: Cèl·lules Vives
-              </div>
-              <p className="text-xs text-slate-600">
-                No miris tota la graella de cop. Compta els veïns només de les cel·les verdes en la seva caixa 3x3.
-              </p>
-            </button>
-
-            <button
-              onClick={() => setActiveStep(2)}
-              className={cn(
-                "p-3 rounded-xl border text-left transition-all cursor-pointer",
-                activeStep === 2
-                  ? "border-amber-500 bg-amber-50/70 shadow-sm"
-                  : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
-              )}
-            >
-              <div className="flex items-center gap-2 font-bold text-sm text-slate-800 mb-1">
-                <span className={cn(
-                  "w-5 h-5 rounded-full flex items-center justify-center text-xs",
-                  activeStep === 2 ? "bg-amber-600 text-white" : "bg-slate-200 text-slate-700"
-                )}>2</span>
-                Tècnica 2: Filtra les Mortes
-              </div>
-              <p className="text-xs text-slate-600">
-                Descarta el 90% de cel·les blanques llunyanes. Revisa només les adjacents que toquen 3 vives.
-              </p>
-            </button>
-
-            <button
-              onClick={() => setActiveStep(3)}
-              className={cn(
-                "p-3 rounded-xl border text-left transition-all cursor-pointer",
-                activeStep === 3
-                  ? "border-emerald-500 bg-emerald-50/70 shadow-sm"
-                  : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
-              )}
-            >
-              <div className="flex items-center gap-2 font-bold text-sm text-slate-800 mb-1">
-                <span className={cn(
-                  "w-5 h-5 rounded-full flex items-center justify-center text-xs",
-                  activeStep === 3 ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-700"
-                )}>3</span>
-                Tècnica 3: Dibuixa i Valida
-              </div>
-              <p className="text-xs text-slate-600">
-                Aplica la combinació (supervivents + nous naixements) a la quadrícula de predicció.
-              </p>
-            </button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-800 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-blue-600" />
+              Metodologia Pas a Pas: Segueix l'ordre 1 ➔ 2 ➔ 3
+            </h2>
+            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+              Has d'avançar pas a pas per desbloquejar la solució
+            </span>
           </div>
 
-          {/* Explicació dinàmica del pas actiu */}
-          <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-700 leading-relaxed">
-            {activeStep === 1 && (
-              <div>
-                <strong className="text-blue-700 font-semibold">Pas 1 a l'exemple:</strong> Mira les 3 cèl·lules verdes a l'Estat Inicial.
-                La de dalt a la dreta té 2 veïns vius, la de dalt a l'esquerra té 2 veïns vius, i la de sota té 2 veïns vius. 
-                Segons la <em>Regla de Supervivència (2 o 3 veïns)</em>, <strong>totes 3 sobreviuran!</strong>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Pas 1 */}
+            <div
+              onClick={() => handleStepClick(1)}
+              className={cn(
+                "p-3.5 rounded-xl border text-left transition-all",
+                activeStep === 1
+                  ? "border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-500/20"
+                  : "border-slate-200 bg-slate-50/60 opacity-80 cursor-pointer hover:opacity-100"
+              )}
+            >
+              <div className="flex items-center justify-between font-bold text-sm text-slate-900 mb-1">
+                <span className="flex items-center gap-1.5">
+                  <span className={cn(
+                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                    activeStep === 1 ? "bg-blue-600 text-white" : "bg-slate-300 text-slate-700"
+                  )}>1</span>
+                  Tècnica 1: Cèl·lules Vives
+                </span>
+                {maxStepReached > 1 && <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />}
               </div>
-            )}
-            {activeStep === 2 && (
-              <div>
-                <strong className="text-amber-700 font-semibold">Pas 2 a l'exemple:</strong> La majoria de caselles blanques estan buides i tenen 0 o 1 veí. 
-                Però fixa't en la cantonada buida que envolten les tres verdes: <strong>té exactament 3 veïns vius!</strong>
-                Segons la <em>Regla de Reproducció</em>, <strong>aquesta cel·la renaixerà viva!</strong>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                No miris tota la graella de cop. Compta els veïns de cada cèl·lula viva (verda) a la seva àrea 3x3.
+              </p>
+            </div>
+
+            {/* Pas 2 */}
+            <div
+              onClick={() => handleStepClick(2)}
+              className={cn(
+                "p-3.5 rounded-xl border text-left transition-all",
+                activeStep === 2
+                  ? "border-amber-600 bg-amber-50/80 shadow-md ring-2 ring-amber-500/20"
+                  : maxStepReached >= 2
+                  ? "border-slate-200 bg-slate-50/60 opacity-80 cursor-pointer hover:opacity-100"
+                  : "border-slate-200 bg-slate-100/50 opacity-40 cursor-not-allowed"
+              )}
+            >
+              <div className="flex items-center justify-between font-bold text-sm text-slate-900 mb-1">
+                <span className="flex items-center gap-1.5">
+                  <span className={cn(
+                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                    activeStep === 2 ? "bg-amber-600 text-white" : "bg-slate-300 text-slate-700"
+                  )}>2</span>
+                  Tècnica 2: Filtra les Mortes
+                </span>
+                {maxStepReached > 2 && <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />}
               </div>
-            )}
-            {activeStep === 3 && (
-              <div>
-                <strong className="text-emerald-700 font-semibold">Pas 3 - Solució:</strong> Les 3 cel·les supervivents més la nova cel·la nascuda formen un <strong>quadrat de 2x2 (el Bloc)</strong>.
-                Fes clic a la graella de la dreta per dibuixar aquest quadrat de 2x2 i prem «Comprovar».
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Descarta el 90% de cel·les blanques. Revisa només les que toquen cèl·lules vives: si en toquen 3, reneixen!
+              </p>
+            </div>
+
+            {/* Pas 3 */}
+            <div
+              onClick={() => handleStepClick(3)}
+              className={cn(
+                "p-3.5 rounded-xl border text-left transition-all",
+                activeStep === 3
+                  ? "border-emerald-600 bg-emerald-50/80 shadow-md ring-2 ring-emerald-500/20"
+                  : maxStepReached >= 3
+                  ? "border-slate-200 bg-slate-50/60 opacity-80 cursor-pointer hover:opacity-100"
+                  : "border-slate-200 bg-slate-100/50 opacity-40 cursor-not-allowed"
+              )}
+            >
+              <div className="flex items-center justify-between font-bold text-sm text-slate-900 mb-1">
+                <span className="flex items-center gap-1.5">
+                  <span className={cn(
+                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                    activeStep === 3 ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-700"
+                  )}>3</span>
+                  Tècnica 3: Dibuixa i Valida
+                </span>
+                {isChecked && <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />}
               </div>
-            )}
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Aplica la combinació (supervivents + nous naixements) a la quadrícula de predicció i comprova.
+              </p>
+            </div>
+          </div>
+
+          {/* Banner explicatiu interactiu amb botó de passar al següent pas */}
+          <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+              {activeStep === 1 && (
+                <div>
+                  <span className="font-bold text-blue-700 uppercase tracking-wider text-xs block mb-1">Pas 1 actiu:</span>
+                  {currentExample.step1Explanation}
+                </div>
+              )}
+              {activeStep === 2 && (
+                <div>
+                  <span className="font-bold text-amber-700 uppercase tracking-wider text-xs block mb-1">Pas 2 actiu:</span>
+                  {currentExample.step2Explanation}
+                </div>
+              )}
+              {activeStep === 3 && (
+                <div>
+                  <span className="font-bold text-emerald-700 uppercase tracking-wider text-xs block mb-1">Pas 3 actiu:</span>
+                  {currentExample.step3Explanation}
+                </div>
+              )}
+            </div>
+
+            {/* Botons per forçar l'avançament pas a pas */}
+            <div className="shrink-0">
+              {activeStep === 1 && (
+                <button
+                  onClick={() => advanceToStep(2)}
+                  className="w-full sm:w-auto py-2.5 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Anar al Pas 2 (Cèl·lules Mortes)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+              {activeStep === 2 && (
+                <button
+                  onClick={() => advanceToStep(3)}
+                  className="w-full sm:w-auto py-2.5 px-5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Anar al Pas 3 (Dibuixar Solució)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+              {activeStep === 3 && (
+                <div className="text-xs font-semibold text-emerald-700 bg-emerald-100/70 px-3 py-1.5 rounded-lg text-center">
+                  Graella de predicció desbloquejada!
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Quadrícules de demostració */}
+        {/* Quadrícules Interactives */}
         <div className="flex flex-col md:flex-row gap-8 items-center justify-center flex-1 my-4">
-          {/* Estat Inicial amb pistes visuals */}
+          {/* Estat Inicial amb pistes segons el pas */}
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-sm font-bold text-slate-700">Estat Inicial</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-medium">Observa</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold">
+                {activeStep === 1 ? 'Pas 1: Recompte Veïns' : activeStep === 2 ? 'Pas 2: Naixements' : 'Referència'}
+              </span>
             </div>
 
-            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-4 gap-1.5">
-              {TUTORIAL_INITIAL.map((row, r) =>
+            <div
+              className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 grid gap-2"
+              style={{ gridTemplateColumns: `repeat(${currentExample.size}, minmax(0, 1fr))` }}
+            >
+              {currentExample.initial.map((row, r) =>
                 row.map((cell, c) => {
                   const isAlive = cell === 1;
-                  const isCandidateBirth = r === 2 && c === 2;
+                  const liveInfo = currentExample.liveNeighborCounts.find(item => item.r === r && item.c === c);
+                  const candidateInfo = currentExample.candidateBirthCells.find(item => item.r === r && item.c === c);
 
                   return (
                     <div
                       key={`tut-init-${r}-${c}`}
                       className={cn(
-                        "w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center font-bold text-xs relative transition-all duration-300",
+                        "w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center font-bold text-xs relative transition-all duration-300",
                         isAlive
                           ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                          : isCandidateBirth && (activeStep === 2 || activeStep === 3)
-                          ? "bg-amber-100 border-2 border-dashed border-amber-500 text-amber-800"
+                          : candidateInfo && activeStep >= 2
+                          ? "bg-amber-100 border-2 border-dashed border-amber-500 text-amber-900"
                           : "bg-slate-100 text-slate-400"
                       )}
                     >
-                      {isAlive && (
-                        <div className="flex flex-col items-center">
-                          <span className="text-[10px] uppercase font-bold tracking-tight opacity-75">Viva</span>
-                          <span className="text-xs bg-emerald-700/60 px-1.5 rounded-full mt-0.5">2 veïns</span>
+                      {/* En Pas 1: Destacar els veïns i destí de les vives */}
+                      {isAlive && activeStep === 1 && liveInfo && (
+                        <div className="flex flex-col items-center text-center p-1">
+                          <span className="text-[11px] font-bold">{liveInfo.count} {liveInfo.count === 1 ? 'veí' : 'veïns'}</span>
+                          <span className={cn(
+                            "text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-md mt-1",
+                            liveInfo.outcome === 'mor' ? "bg-red-700 text-white" : "bg-emerald-800 text-white"
+                          )}>
+                            {liveInfo.outcome === 'mor' ? 'Mor' : 'Superviu'}
+                          </span>
                         </div>
                       )}
-                      {!isAlive && isCandidateBirth && (activeStep === 2 || activeStep === 3) && (
-                        <div className="flex flex-col items-center text-center p-0.5">
-                          <span className="text-[10px] font-bold text-amber-900 leading-tight">3 veïns!</span>
-                          <span className="text-[9px] text-amber-700 font-medium">Neix</span>
+
+                      {/* En Pas 2 o 3: Destacar naixement de mortes */}
+                      {!isAlive && candidateInfo && activeStep >= 2 && (
+                        <div className="flex flex-col items-center text-center p-1 animate-pulse">
+                          <span className="text-[11px] font-extrabold text-amber-900">3 veïns!</span>
+                          <span className="text-[10px] bg-amber-500 text-white font-bold px-1.5 py-0.5 rounded-md mt-1">
+                            Reneix
+                          </span>
                         </div>
+                      )}
+
+                      {isAlive && activeStep > 1 && (
+                        <span className="text-xs uppercase font-bold tracking-tight opacity-80">Viva</span>
                       )}
                     </div>
                   );
@@ -249,26 +441,35 @@ export function TutorialLevel({ onComplete, onSkip }: TutorialLevelProps) {
             <ArrowRight className="w-8 h-8" />
           </div>
 
-          {/* Quadrícula del Jugador */}
+          {/* Quadrícula del Jugador (Predicció) */}
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-sm font-bold text-slate-700">La teva predicció</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">Fes clic aquí</span>
+              <span className={cn(
+                "text-xs px-2.5 py-0.5 rounded-full font-semibold",
+                activeStep === 3 ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"
+              )}>
+                {activeStep === 3 ? 'Desbloquejada · Fes clic' : 'Bloquejada fins al Pas 3'}
+              </span>
             </div>
 
             <div
               className={cn(
-                "bg-white p-3 rounded-2xl shadow-sm border-2 grid grid-cols-4 gap-1.5 transition-colors duration-300",
-                isChecked ? "border-emerald-400 bg-emerald-50/40" : "border-blue-200"
+                "bg-white p-3 rounded-2xl shadow-sm border-2 grid gap-2 transition-all duration-300 relative",
+                activeStep < 3 ? "opacity-60 grayscale-[50%]" : "",
+                isChecked ? "border-emerald-400 bg-emerald-50/40" : "border-blue-300"
               )}
+              style={{ gridTemplateColumns: `repeat(${currentExample.size}, minmax(0, 1fr))` }}
             >
               {playerGrid.map((row, r) =>
                 row.map((cell, c) => {
                   const isPlayerLive = cell === 1;
-                  const isExpectedLive = TUTORIAL_EXPECTED[r][c] === 1;
+                  const isExpectedLive = currentExample.expected[r][c] === 1;
 
                   let cellClass = "bg-slate-100 hover:bg-slate-200 cursor-pointer";
-                  if (!isChecked) {
+                  if (activeStep < 3) {
+                    cellClass = "bg-slate-100 cursor-not-allowed";
+                  } else if (!isChecked) {
                     if (isPlayerLive) cellClass = "bg-blue-500 shadow-md shadow-blue-500/20 hover:bg-blue-600";
                   } else {
                     if (isPlayerLive && isExpectedLive) cellClass = "bg-emerald-500 shadow-md text-white";
@@ -280,15 +481,15 @@ export function TutorialLevel({ onComplete, onSkip }: TutorialLevelProps) {
                     <button
                       key={`tut-player-${r}-${c}`}
                       onClick={() => toggleCell(r, c)}
-                      disabled={isChecked}
+                      disabled={activeStep < 3 || isChecked}
                       className={cn(
-                        "w-14 h-14 sm:w-16 sm:h-16 rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer",
+                        "w-16 h-16 sm:w-20 sm:h-20 rounded-xl transition-all duration-200 flex items-center justify-center font-bold text-xs",
                         cellClass
                       )}
                       aria-label={`Casella ${r}, ${c}`}
                     >
                       {isChecked && isPlayerLive && isExpectedLive && (
-                        <Check className="w-6 h-6 text-white stroke-[3]" />
+                        <Check className="w-8 h-8 text-white stroke-[3]" />
                       )}
                     </button>
                   );
@@ -297,13 +498,17 @@ export function TutorialLevel({ onComplete, onSkip }: TutorialLevelProps) {
             </div>
 
             <div className="mt-3 text-xs text-slate-500 text-center">
-              Fes clic a les caselles per activar o desactivar cèl·lules
+              {activeStep < 3 ? (
+                <span className="text-amber-700 font-medium">Completa els passos 1 i 2 per activar aquesta graella</span>
+              ) : (
+                <span>Fes clic a les caselles per activar o desactivar cèl·lules</span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Accions de comprovació */}
-        <div className="mt-6 flex flex-col items-center gap-3">
+        {/* Accions de comprovació i transició */}
+        <div className="mt-4 flex flex-col items-center gap-3">
           <AnimatePresence mode="wait">
             {!isChecked ? (
               <motion.div
@@ -313,22 +518,24 @@ export function TutorialLevel({ onComplete, onSkip }: TutorialLevelProps) {
                 exit={{ opacity: 0, y: -10 }}
                 className="flex flex-col items-center gap-3"
               >
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleReset}
-                    className="py-2.5 px-5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    Netejar
-                  </button>
-                  <button
-                    onClick={handleCheck}
-                    className="py-2.5 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
-                  >
-                    <Check className="w-4 h-4" />
-                    Comprovar predicció
-                  </button>
-                </div>
+                {activeStep === 3 && (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setPlayerGrid(Array(currentExample.size).fill(0).map(() => Array(currentExample.size).fill(0)))}
+                      className="py-2.5 px-5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Netejar graella
+                    </button>
+                    <button
+                      onClick={handleCheck}
+                      className="py-2.5 px-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" />
+                      Comprovar predicció
+                    </button>
+                  </div>
+                )}
 
                 <AnimatePresence>
                   {showError && (
@@ -336,9 +543,10 @@ export function TutorialLevel({ onComplete, onSkip }: TutorialLevelProps) {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="text-red-600 font-medium bg-red-50 px-4 py-2 rounded-xl text-xs sm:text-sm border border-red-200"
+                      className="text-red-700 font-semibold bg-red-50 px-4 py-2.5 rounded-xl text-xs sm:text-sm border border-red-200 flex items-center gap-2"
                     >
-                      Recorda: han de quedar vives les 3 inicials (superviuen) i la casella que toquen les tres (reneix). En total, un quadrat 2x2!
+                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>{currentExample.step3Explanation}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -354,18 +562,27 @@ export function TutorialLevel({ onComplete, onSkip }: TutorialLevelProps) {
                   <Sparkles className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-emerald-900">Molt bé! Has dominat la tècnica!</h3>
+                  <h3 className="text-lg font-bold text-emerald-900">
+                    {exampleIndex < EXAMPLES.length - 1
+                      ? `Exemple ${exampleIndex + 1} de 3 superat!`
+                      : "Tutorial completat amb èxit!"}
+                  </h3>
                   <p className="text-xs sm:text-sm text-emerald-800 mt-1">
-                    Ja saps com analitzar primer les cèl·lules vives i després cercar només les mortes adjacents amb 3 veïns.
-                    Aquest entrenament no compta per a la nota, ara estàs preparat per als 20 nivells!
+                    {exampleIndex < EXAMPLES.length - 1
+                      ? "Has aplicat correctament la metodologia. Passem al següent exemple guiat!"
+                      : "Ja domines les 3 tècniques per resoldre qualsevol escenari! Ara comença la partida oficial amb els 20 nivells."}
                   </p>
                 </div>
 
                 <button
-                  onClick={onComplete}
-                  className="py-3 px-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                  onClick={handleNextExample}
+                  className="py-3 px-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer text-sm sm:text-base"
                 >
-                  <span>Començar el Nivell 1</span>
+                  <span>
+                    {exampleIndex < EXAMPLES.length - 1
+                      ? `Continuar a l'Exemple ${exampleIndex + 2} de 3`
+                      : "Començar el Nivell 1 Oficial!"}
+                  </span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </motion.div>
