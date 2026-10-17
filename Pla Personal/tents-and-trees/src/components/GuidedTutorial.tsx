@@ -116,30 +116,36 @@ export function GuidedTutorial({ onComplete, onExit, allowExit }: GuidedTutorial
       }
     },
     {
-      title: "Estratègia 2: Caselles que no toquen cap arbre",
+      title: "Estratègia 2: Caselles que no toquen cap arbre (la diagonal no compta!)",
       badge: "Pas 2 de 5",
-      description: "Cada tenda ha d'estar enganxada a un arbre en creu (dalt, baix, esquerra o dreta, mai en diagonal). Les caselles que no toquen cap arbre mai no podran tenir tenda!",
-      hint: "Fixa't en la cantonada superior esquerra (0, 0): no toca cap arbre. Fes 2 clics per marcar-la amb gespa!",
-      highlightCells: [{ r: 0, c: 0 }],
+      description: "Recorda una regla d'or: cada tenda ha d'estar tocant un arbre en creu (dalt, baix, esquerra o dreta). En diagonal MAI no compta! Per tant, totes les caselles que no toquen cap arbre en creu han de ser gespa. Fixa't bé en les 4 caselles buides: (0, 0) no toca cap arbre, i (0, 3), (4, 0) i (4, 2) només toquen arbres en diagonal (no compta!).",
+      hint: "Marca amb gespa (2 clics a cadascuna o clic dret) les 4 caselles ressaltades: (0, 0), (0, 3), (4, 0) i (4, 2)!",
+      highlightCells: [{ r: 0, c: 0 }, { r: 0, c: 3 }, { r: 4, c: 0 }, { r: 4, c: 2 }],
       validate: (board) => {
-        if (board[0][0] === 'tent') {
-          return { valid: false, error: "La casella (0, 0) no toca cap arbre en creu! No hi pot haver cap tenda. Fes un altre clic per posar-hi gespa." };
-        }
-        if (board[0][0] === 'empty') {
-          return { valid: false, error: "Fes 2 clics (o clic dret) a la casella superior esquerra (0, 0) per marcar-la amb gespa." };
+        const targets = [{ r: 0, c: 0 }, { r: 0, c: 3 }, { r: 4, c: 0 }, { r: 4, c: 2 }];
+        for (let t of targets) {
+          if (board[t.r][t.c] === 'tent') {
+            return { valid: false, error: `La casella (${t.r}, ${t.c}) no toca cap arbre en creu (en diagonal no compta!). Fes un altre clic per posar-hi gespa.` };
+          }
+          if (board[t.r][t.c] === 'empty') {
+            return { valid: false, error: "Encara et falten caselles ressaltades per marcar amb gespa. Recorda: en diagonal no compta, fes 2 clics per a cadascuna!" };
+          }
         }
         return { valid: true };
       },
       autoSolve: (prev) => {
         const next = prev.map(row => [...row]);
         next[0][0] = 'grass';
+        next[0][3] = 'grass';
+        next[4][0] = 'grass';
+        next[4][2] = 'grass';
         return next;
       }
     },
     {
       title: "Estratègia 3: Arbre amb una sola casella lliure (Tenda segura!)",
       badge: "Pas 3 de 5",
-      description: "Fixa't en l'arbre superior (fila 2, columna 3). Al seu voltant ja hem descartat la dreta, l'esquerra i la part inferior. Només li queda UNA casella lliure a dalt (0, 2)! Com que tot arbre ha de tenir una tenda, aquesta tenda va aquí obligatòriament.",
+      description: "Fixa't en l'arbre superior (fila 2, columna 3). Al seu voltant ja hem descartat la dreta, l'esquerra i la part inferior. A més, a la fila 0 només queda UNA casella lliure a dalt (0, 2)! Com que tot arbre ha de tenir una tenda, aquesta tenda va aquí obligatòriament.",
       hint: "Fes 1 sol clic a la casella (0, 2) per col·locar la tenda segura de l'arbre!",
       highlightTrees: [{ r: 1, c: 2 }],
       highlightCells: [{ r: 0, c: 2 }],
@@ -159,43 +165,35 @@ export function GuidedTutorial({ onComplete, onExit, allowExit }: GuidedTutorial
       }
     },
     {
-      title: "Estratègia 4: El voltant de la tenda i línies completades",
+      title: "Estratègia 4: Línies completades",
       badge: "Pas 4 de 5",
-      description: "Recorda: dues tendes mai no poden tocar-se, ni tan sols en diagonal! Quan poses una tenda, totes les caselles del seu voltant han de ser gespa. A més, si una fila o columna ja té el número de tendes que demanava, la resta de la línia és gespa!",
-      hint: "La fila 0 i la columna 2 ja tenen la seva tenda (pista 1). Marca amb gespa (2 clics) les caselles (0, 3), (3, 2) i (4, 2)!",
-      highlightCells: [{ r: 0, c: 3 }, { r: 3, c: 2 }, { r: 4, c: 2 }],
+      description: "La columna 2 demanava exactament 1 tenda (pista 1) i ja la tenim col·locada a dalt (0, 2). Com que la columna ja està completa, cap altra casella de la columna pot tenir tenda. Marca la casella (3, 2) amb gespa!",
+      hint: "Fes 2 clics (o clic dret) a la casella (3, 2) per posar-hi gespa.",
+      highlightCells: [{ r: 3, c: 2 }],
       validate: (board) => {
-        const targets = [{ r: 0, c: 3 }, { r: 3, c: 2 }, { r: 4, c: 2 }];
-        for (let t of targets) {
-          if (board[t.r][t.c] === 'tent') {
-            return { valid: false, error: "Has posat una tenda on no toca! Recorda que la columna 2 ja té la seva tenda i no es poden tocar entre elles. Posa-hi gespa (2 clics)." };
-          }
-          if (board[t.r][t.c] === 'empty') {
-            return { valid: false, error: "Encara et falten caselles ressaltades per marcar amb gespa. Recorda: dos clics (o clic dret)!" };
-          }
+        if (board[3][2] === 'tent') {
+          return { valid: false, error: "La columna 2 ja té la seva tenda a dalt! Fes un altre clic per posar-hi gespa (2 clics)." };
+        }
+        if (board[3][2] === 'empty') {
+          return { valid: false, error: "Fes 2 clics a la casella ressaltada (3, 2) per omplir la columna 2 amb gespa." };
         }
         return { valid: true };
       },
       autoSolve: (prev) => {
         const next = prev.map(row => [...row]);
-        next[0][3] = 'grass';
         next[3][2] = 'grass';
-        next[4][2] = 'grass';
         return next;
       }
     },
     {
       title: "Estratègia 5: Tancament lògic de les darreres tendes",
       badge: "Pas 5 de 5",
-      description: "Mira ara l'arbre inferior esquerre (3, 1): només té la casella (3, 0) lliure -> segona tenda segura! A sota seu (4, 0) ha de ser gespa perquè no es toquin. I a la fila 4 només queda (4, 3) lliure per a la darrera tenda!",
-      hint: "1 clic a (3, 0) per posar tenda, 2 clics a (4, 0) per posar gespa, i 1 clic a (4, 3) per posar la darrera tenda!",
-      highlightCells: [{ r: 3, c: 0 }, { r: 4, c: 0 }, { r: 4, c: 3 }],
+      description: "Ara mira els dos arbres inferiors: a l'arbre (3, 1) només li queda (3, 0) lliure -> segona tenda segura! I a l'arbre (3, 3) només li queda (4, 3) lliure -> tercera tenda segura!",
+      hint: "Fes 1 clic a (3, 0) i 1 clic a (4, 3) per posar les dues darreres tendes i resoldre el tauler!",
+      highlightCells: [{ r: 3, c: 0 }, { r: 4, c: 3 }],
       validate: (board) => {
         if (board[3][0] !== 'tent') {
-          return { valid: false, error: "Falta col·locar la tenda a la casella (3, 0) (a l'esquerra de l'arbre)." };
-        }
-        if (board[4][0] !== 'grass') {
-          return { valid: false, error: "La casella (4, 0) toca la tenda de sobre: posa-hi gespa (2 clics) perquè dues tendes no es toquin!" };
+          return { valid: false, error: "Falta col·locar la tenda a la casella (3, 0) (1 clic)." };
         }
         if (board[4][3] !== 'tent') {
           return { valid: false, error: "Falta col·locar la darrera tenda a la casella (4, 3) (1 clic)." };
@@ -205,7 +203,6 @@ export function GuidedTutorial({ onComplete, onExit, allowExit }: GuidedTutorial
       autoSolve: (prev) => {
         const next = prev.map(row => [...row]);
         next[3][0] = 'tent';
-        next[4][0] = 'grass';
         next[4][3] = 'tent';
         return next;
       }
