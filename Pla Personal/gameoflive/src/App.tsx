@@ -7,6 +7,7 @@ import { twMerge } from 'tailwind-merge';
 import { saveGame, loadGame, clearGame, LevelStat } from './storage';
 import { ScoreSummary } from './components/ScoreSummary';
 import { TutorialLevel } from './components/TutorialLevel';
+import { RulesScreen } from './components/RulesScreen';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -315,7 +316,7 @@ export default function App() {
     return "w-7 h-7 sm:w-9 sm:h-9";
   };
   const [playerGrid, setPlayerGrid] = useState<number[][]>([]);
-  const [gameState, setGameState] = useState<'intro' | 'video' | 'tutorial' | 'playing' | 'checked' | 'completed'>('intro');
+  const [gameState, setGameState] = useState<'intro' | 'video' | 'rules' | 'tutorial' | 'playing' | 'checked' | 'completed'>('intro');
   const [showRules, setShowRules] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -552,20 +553,13 @@ export default function App() {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div className="flex items-center justify-center">
                   <button 
                     onClick={() => setGameState('video')}
-                    className="py-4 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2 cursor-pointer"
+                    className="py-4 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2 cursor-pointer"
                   >
                     <Play className="w-5 h-5 fill-current" />
                     Començar l'Aventura
-                  </button>
-                  <button 
-                    onClick={() => setGameState('tutorial')}
-                    className="py-3.5 px-6 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-full font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-sm"
-                  >
-                    <Lightbulb className="w-4 h-4 text-amber-600" />
-                    Tutorial Guiat de Tècniques
                   </button>
                 </div>
               )}
@@ -608,16 +602,24 @@ export default function App() {
 
           <div className="text-center">
             <button 
-              onClick={() => setGameState('tutorial')}
+              onClick={() => setGameState('rules')}
               className="py-4 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-base sm:text-lg shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
             >
-              <Lightbulb className="w-5 h-5 text-amber-300" />
-              <span>Continuar al Tutorial Guiat Obligatori</span>
+              <span>Continuar a les Regles del Joc</span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         </motion.div>
       </div>
+    );
+  }
+
+  if (gameState === 'rules') {
+    return (
+      <RulesScreen
+        onContinue={() => setGameState('tutorial')}
+        onBackToVideo={() => setGameState('video')}
+      />
     );
   }
 
