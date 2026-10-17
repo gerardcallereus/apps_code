@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tent, TreePine, AlertTriangle, Play, CheckCircle2, Eye, RotateCcw } from 'lucide-react';
+import { Tent, TreePine, AlertTriangle, Play, CheckCircle2, Eye, RotateCcw, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface IntroScreenProps {
@@ -7,9 +7,10 @@ interface IntroScreenProps {
   savedLevelIndex?: number | null;
   onContinue?: () => void;
   onResetProgress?: () => void;
+  onStartTutorial: () => void;
 }
 
-export function IntroScreen({ onStart, savedLevelIndex, onContinue, onResetProgress }: IntroScreenProps) {
+export function IntroScreen({ onStart, savedLevelIndex, onContinue, onResetProgress, onStartTutorial }: IntroScreenProps) {
   const [confirmReset, setConfirmReset] = useState(false);
   const hasSavedGame = typeof savedLevelIndex === 'number' && savedLevelIndex >= 0;
 
@@ -52,7 +53,7 @@ export function IntroScreen({ onStart, savedLevelIndex, onContinue, onResetProgr
         <div className="p-8 sm:p-10">
           <h2 className="text-2xl font-bold mb-6 text-center">Com es juga?</h2>
           
-          <div className="grid sm:grid-cols-2 gap-6 mb-10">
+          <div className="grid sm:grid-cols-2 gap-6 mb-8">
             <div className="flex gap-4 items-start">
               <div className="bg-green-100 p-3 rounded-xl shrink-0">
                 <TreePine className="w-6 h-6 text-green-700" />
@@ -94,23 +95,31 @@ export function IntroScreen({ onStart, savedLevelIndex, onContinue, onResetProgr
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3">
             {hasSavedGame ? (
               <>
                 <button
                   onClick={onContinue || onStart}
-                  className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-xl font-bold py-4 px-10 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3"
+                  className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-xl font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-3"
                 >
                   <Play className="w-6 h-6 fill-current" />
                   Continuar partida (Nivell {savedLevelIndex + 1})
                 </button>
 
+                <button
+                  onClick={onStartTutorial}
+                  className="w-full max-w-sm bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold py-3 px-6 rounded-2xl transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <GraduationCap className="w-5 h-5 text-amber-700" />
+                  Repassar el Nivell Guiat (Estratègies)
+                </button>
+
                 {!confirmReset ? (
                   <button
                     onClick={() => setConfirmReset(true)}
-                    className="text-stone-500 hover:text-stone-800 text-sm font-medium transition-colors flex items-center gap-2 mt-1"
+                    className="text-stone-400 hover:text-stone-700 text-xs font-medium transition-colors flex items-center gap-1.5 mt-2"
                   >
-                    <RotateCcw className="w-4 h-4" />
+                    <RotateCcw className="w-3.5 h-3.5" />
                     Vols començar de nou des del nivell 1?
                   </button>
                 ) : (
@@ -139,13 +148,23 @@ export function IntroScreen({ onStart, savedLevelIndex, onContinue, onResetProgr
                 )}
               </>
             ) : (
-              <button
-                onClick={onStart}
-                className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-xl font-bold py-4 px-10 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3"
-              >
-                <Play className="w-6 h-6 fill-current" />
-                Començar a jugar
-              </button>
+              <>
+                <button
+                  onClick={onStartTutorial}
+                  className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-lg font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2.5"
+                >
+                  <GraduationCap className="w-6 h-6" />
+                  Nivell Guiat (Aprèn les tècniques)
+                </button>
+
+                <button
+                  onClick={onStart}
+                  className="w-full max-w-sm bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold py-3 px-6 rounded-2xl transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <Play className="w-4 h-4 fill-current text-stone-600" />
+                  Anar directe al Nivell 1
+                </button>
+              </>
             )}
           </div>
         </div>

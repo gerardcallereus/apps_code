@@ -4,7 +4,8 @@ import { Grid } from './components/Grid';
 import { IntroScreen } from './components/IntroScreen';
 import { SummaryScreen } from './components/SummaryScreen';
 import { RulesModal } from './components/RulesModal';
-import { Tent, Trophy, ArrowRight, RefreshCw, BarChart3, CheckCircle2, AlertCircle, Info, Award } from 'lucide-react';
+import { GuidedTutorial } from './components/GuidedTutorial';
+import { Tent, Trophy, ArrowRight, RefreshCw, BarChart3, CheckCircle2, AlertCircle, Info, Award, GraduationCap } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 import { loadGame, saveGame, clearGame, SavedGameData } from './lib/storage';
@@ -42,7 +43,7 @@ export type GameStats = Record<number, LevelStats>;
 
 export default function App() {
   const [savedData, setSavedData] = useState<SavedGameData | null>(() => loadGame());
-  const [gameState, setGameState] = useState<'intro' | 'playing' | 'summary'>('intro');
+  const [gameState, setGameState] = useState<'intro' | 'tutorial' | 'playing' | 'summary'>('intro');
   const [levelIndex, setLevelIndex] = useState(0);
   const [loadedLevel, setLoadedLevel] = useState<number | null>(null);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
@@ -226,6 +227,20 @@ export default function App() {
         savedLevelIndex={savedData ? savedData.levelIndex : null}
         onContinue={handleContinueGame}
         onResetProgress={handleResetProgress}
+        onStartTutorial={() => setGameState('tutorial')}
+      />
+    );
+  }
+
+  if (gameState === 'tutorial') {
+    return (
+      <GuidedTutorial 
+        onComplete={() => {
+          setGameState('playing');
+        }}
+        onExit={() => {
+          setGameState('playing');
+        }}
       />
     );
   }
@@ -267,6 +282,13 @@ export default function App() {
             <div className="text-sm font-medium text-stone-500 bg-stone-100 px-3 py-1 rounded-full">
               Nivell {levelIndex + 1} de {LEVELS.length}
             </div>
+            <button 
+              onClick={() => setGameState('tutorial')}
+              className="p-2 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-full transition-colors"
+              title="Nivell guiat d'estratègies"
+            >
+              <GraduationCap className="w-5 h-5" />
+            </button>
             <button 
               onClick={() => setShowRules(true)}
               className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors"
