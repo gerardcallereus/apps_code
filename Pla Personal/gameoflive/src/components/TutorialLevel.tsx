@@ -103,9 +103,9 @@ const EXAMPLES: TutorialExample[] = [
       { r: 0, c: 1, count: 3 },
       { r: 2, c: 1, count: 3 },
     ],
-    step1Explanation: "A la línia horitzontal, els dos extrems només tenen 1 veí viu (moren per solitud). La cèl·lula del mig té 2 veïns vius (sobreviu).",
-    step2Explanation: "A dalt i a sota de la cel·la central hi ha dues caselles buides que toquen cadascuna les 3 cel·les de la línia! Totes dues reuneixen 3 veïns i reneixen!",
-    step3Explanation: "Només sobreviu la del mig i reneixen la de dalt i la de sota. La línia horitzontal es transforma en una línia vertical (el Parpelleig)! Dibuixa-la i prem Comprovar.",
+    step1Explanation: "Revisem les 3 cèl·lules vives de la línia: Els 2 extrems només toquen 1 veí viu i per tant MOREN per solitud (✕). Només la cèl·lula central té 2 veïns vius i SOBREVIU (✓).",
+    step2Explanation: "Busquem caselles blanques amb exactament 3 veïns: La de dalt i la de sota toquen totes dues les 3 cèl·lules de la línia i RENEIXEN (✨). Recorda: Dels 3 originals només la central es manté viva, els 2 extrems moren!",
+    step3Explanation: "Combinem-ho tot a la quadrícula de predicció: Els 2 extrems s'apaguen (moren), el centre segueix encès (sobreviu) i s'encenen la de dalt i la de sota (neixen). La línia horitzontal esdevé una línia vertical! Marca les 3 caselles verticals i prem Comprovar.",
   },
 ];
 
@@ -383,43 +383,68 @@ export function TutorialLevel({ onComplete }: TutorialLevelProps) {
                   const liveInfo = currentExample.liveNeighborCounts.find(item => item.r === r && item.c === c);
                   const candidateInfo = currentExample.candidateBirthCells.find(item => item.r === r && item.c === c);
 
+                  const willDie = isAlive && liveInfo?.outcome === 'mor';
+                  const willSurvive = isAlive && liveInfo?.outcome === 'viu';
+
                   return (
                     <div
                       key={`tut-init-${r}-${c}`}
                       className={cn(
                         "w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center font-bold text-xs relative transition-all duration-300",
-                        isAlive
-                          ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                        willSurvive
+                          ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 border-2 border-emerald-400"
+                          : willDie
+                          ? activeStep === 1
+                            ? "bg-red-500 text-white shadow-md border-2 border-red-600"
+                            : "bg-red-50 border-2 border-red-300 text-red-700"
                           : candidateInfo && activeStep >= 2
-                          ? "bg-amber-100 border-2 border-dashed border-amber-500 text-amber-900"
+                          ? "bg-amber-100 border-2 border-dashed border-amber-500 text-amber-900 shadow-sm"
                           : "bg-slate-100 text-slate-400"
                       )}
                     >
-                      {/* En Pas 1: Destacar els veïns i destí de les vives */}
-                      {isAlive && activeStep === 1 && liveInfo && (
+                      {/* Cèl·lula viva que MOR */}
+                      {willDie && (
                         <div className="flex flex-col items-center text-center p-1">
-                          <span className="text-[11px] font-bold">{liveInfo.count} {liveInfo.count === 1 ? 'veí' : 'veïns'}</span>
                           <span className={cn(
-                            "text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-md mt-1",
-                            liveInfo.outcome === 'mor' ? "bg-red-700 text-white" : "bg-emerald-800 text-white"
+                            "text-[10px] font-semibold",
+                            activeStep === 1 ? "text-red-100" : "text-red-600"
                           )}>
-                            {liveInfo.outcome === 'mor' ? 'Mor' : 'Superviu'}
+                            {liveInfo?.count} {liveInfo?.count === 1 ? 'veí' : 'veïns'}
+                          </span>
+                          <span className={cn(
+                            "text-[10px] uppercase font-black px-1.5 py-0.5 rounded-md mt-0.5 shadow-sm",
+                            activeStep === 1 ? "bg-red-900 text-white" : "bg-red-600 text-white"
+                          )}>
+                            Mor ✕
                           </span>
                         </div>
                       )}
 
-                      {/* En Pas 2 o 3: Destacar naixement de mortes */}
+                      {/* Cèl·lula viva que SOBREVIU */}
+                      {willSurvive && (
+                        <div className="flex flex-col items-center text-center p-1">
+                          <span className="text-[10px] text-emerald-100 font-semibold">
+                            {liveInfo?.count} {liveInfo?.count === 1 ? 'veí' : 'veïns'}
+                          </span>
+                          <span className="text-[10px] uppercase font-black bg-emerald-800 text-white px-1.5 py-0.5 rounded-md mt-0.5 shadow-sm">
+                            Superviu ✓
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Casella buida que RENEIX (en Pas 2 o 3) */}
                       {!isAlive && candidateInfo && activeStep >= 2 && (
                         <div className="flex flex-col items-center text-center p-1 animate-pulse">
-                          <span className="text-[11px] font-extrabold text-amber-900">3 veïns!</span>
-                          <span className="text-[10px] bg-amber-500 text-white font-bold px-1.5 py-0.5 rounded-md mt-1">
-                            Reneix
+                          <span className="text-[10px] font-extrabold text-amber-900">3 veïns!</span>
+                          <span className="text-[10px] uppercase font-black bg-amber-500 text-white px-1.5 py-0.5 rounded-md mt-0.5 shadow-sm">
+                            Reneix ✨
                           </span>
                         </div>
                       )}
 
-                      {isAlive && activeStep > 1 && (
-                        <span className="text-xs uppercase font-bold tracking-tight opacity-80">Viva</span>
+                      {/* Casella buida normal */}
+                      {!isAlive && (!candidateInfo || activeStep === 1) && (
+                        <span className="text-[10px] text-slate-300 font-medium">Buida</span>
                       )}
                     </div>
                   );
@@ -427,12 +452,18 @@ export function TutorialLevel({ onComplete }: TutorialLevelProps) {
               )}
             </div>
 
-            <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 bg-emerald-500 rounded-sm inline-block" /> Cèl·lules vives
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-600">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 bg-emerald-600 border border-emerald-700 rounded-md inline-block shadow-sm" /> 
+                <span className="font-medium">Superviu (segueix viva)</span>
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 bg-amber-100 border border-amber-500 rounded-sm inline-block" /> Candidata a néixer
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 bg-red-500 border border-red-700 rounded-md inline-block shadow-sm" /> 
+                <span className="font-medium">Mor (s'apaga)</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 bg-amber-100 border-2 border-dashed border-amber-500 rounded-md inline-block" /> 
+                <span className="font-medium">Reneix (nova cèl·lula)</span>
               </span>
             </div>
           </div>
