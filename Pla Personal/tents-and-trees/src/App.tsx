@@ -8,7 +8,7 @@ import { GuidedTutorial } from './components/GuidedTutorial';
 import { Tent, Trophy, ArrowRight, RefreshCw, BarChart3, CheckCircle2, AlertCircle, Info, Award, GraduationCap } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
-import { loadGame, saveGame, clearGame, SavedGameData } from './lib/storage';
+import { loadGame, saveGame, clearGame, SavedGameData, setTutorialCompleted } from './lib/storage';
 
 const LEVELS = [
   { size: 5, tents: 3 },
@@ -44,6 +44,7 @@ export type GameStats = Record<number, LevelStats>;
 export default function App() {
   const [savedData, setSavedData] = useState<SavedGameData | null>(() => loadGame());
   const [gameState, setGameState] = useState<'intro' | 'tutorial' | 'playing' | 'summary'>('intro');
+  const [tutorialAllowExit, setTutorialAllowExit] = useState(false);
   const [levelIndex, setLevelIndex] = useState(0);
   const [loadedLevel, setLoadedLevel] = useState<number | null>(null);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
@@ -223,11 +224,13 @@ export default function App() {
   if (gameState === 'intro') {
     return (
       <IntroScreen 
-        onStart={handleStartGame} 
         savedLevelIndex={savedData ? savedData.levelIndex : null}
         onContinue={handleContinueGame}
         onResetProgress={handleResetProgress}
-        onStartTutorial={() => setGameState('tutorial')}
+        onStartTutorial={() => {
+          setTutorialAllowExit(false);
+          setGameState('tutorial');
+        }}
       />
     );
   }
@@ -235,7 +238,12 @@ export default function App() {
   if (gameState === 'tutorial') {
     return (
       <GuidedTutorial 
+        allowExit={tutorialAllowExit}
         onComplete={() => {
+          setTutorialCompleted();
+          hasInitializedRef.current = true;
+          setLevelIndex(0);
+          loadLevel(0);
           setGameState('playing');
         }}
         onExit={() => {
@@ -283,7 +291,10 @@ export default function App() {
               Nivell {levelIndex + 1} de {LEVELS.length}
             </div>
             <button 
-              onClick={() => setGameState('tutorial')}
+              onClick={() => {
+                setTutorialAllowExit(true);
+                setGameState('tutorial');
+              }}
               className="p-2 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-full transition-colors"
               title="Nivell guiat d'estratègies"
             >

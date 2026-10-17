@@ -3,14 +3,13 @@ import { Tent, TreePine, AlertTriangle, Play, CheckCircle2, Eye, RotateCcw, Grad
 import { motion, AnimatePresence } from 'motion/react';
 
 interface IntroScreenProps {
-  onStart: () => void;
   savedLevelIndex?: number | null;
   onContinue?: () => void;
   onResetProgress?: () => void;
   onStartTutorial: () => void;
 }
 
-export function IntroScreen({ onStart, savedLevelIndex, onContinue, onResetProgress, onStartTutorial }: IntroScreenProps) {
+export function IntroScreen({ savedLevelIndex, onContinue, onResetProgress, onStartTutorial }: IntroScreenProps) {
   const [confirmReset, setConfirmReset] = useState(false);
   const hasSavedGame = typeof savedLevelIndex === 'number' && savedLevelIndex >= 0;
 
@@ -99,7 +98,7 @@ export function IntroScreen({ onStart, savedLevelIndex, onContinue, onResetProgr
             {hasSavedGame ? (
               <>
                 <button
-                  onClick={onContinue || onStart}
+                  onClick={onContinue}
                   className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-xl font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-3"
                 >
                   <Play className="w-6 h-6 fill-current" />
@@ -148,23 +147,13 @@ export function IntroScreen({ onStart, savedLevelIndex, onContinue, onResetProgr
                 )}
               </>
             ) : (
-              <>
-                <button
-                  onClick={onStartTutorial}
-                  className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-lg font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2.5"
-                >
-                  <GraduationCap className="w-6 h-6" />
-                  Nivell Guiat (Aprèn les tècniques)
-                </button>
-
-                <button
-                  onClick={onStart}
-                  className="w-full max-w-sm bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold py-3 px-6 rounded-2xl transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <Play className="w-4 h-4 fill-current text-stone-600" />
-                  Anar directe al Nivell 1
-                </button>
-              </>
+              <button
+                onClick={onStartTutorial}
+                className="w-full max-w-sm bg-orange-500 hover:bg-orange-600 text-white text-lg font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-3"
+              >
+                <GraduationCap className="w-6 h-6" />
+                Començar amb el Nivell Guiat
+              </button>
             )}
           </div>
         </div>

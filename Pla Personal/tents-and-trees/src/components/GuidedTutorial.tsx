@@ -6,7 +6,8 @@ import confetti from 'canvas-confetti';
 
 interface GuidedTutorialProps {
   onComplete: () => void;
-  onExit: () => void;
+  onExit?: () => void;
+  allowExit?: boolean;
 }
 
 type CellType = 'empty' | 'tent' | 'grass';
@@ -33,7 +34,7 @@ const TUTORIAL_TREES = [
 const ROW_CLUES = [1, 0, 0, 1, 1];
 const COL_CLUES = [1, 0, 1, 1, 0];
 
-export function GuidedTutorial({ onComplete, onExit }: GuidedTutorialProps) {
+export function GuidedTutorial({ onComplete, onExit, allowExit }: GuidedTutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -215,12 +216,14 @@ export function GuidedTutorial({ onComplete, onExit }: GuidedTutorialProps) {
             </div>
           </div>
 
-          <button
-            onClick={onExit}
-            className="text-stone-500 hover:text-stone-800 text-sm font-semibold py-2 px-4 rounded-xl border border-stone-200 hover:bg-stone-100 transition-colors"
-          >
-            Saltar al joc
-          </button>
+          {allowExit && onExit && (
+            <button
+              onClick={onExit}
+              className="text-stone-500 hover:text-stone-800 text-sm font-semibold py-2 px-4 rounded-xl border border-stone-200 hover:bg-stone-100 transition-colors"
+            >
+              Tornar a la partida
+            </button>
+          )}
         </div>
 
         {/* Targeta pedagògica interactiva */}
